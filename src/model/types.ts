@@ -69,6 +69,8 @@ export interface UteLimits {
 export interface TyreSpec {
   size: string;
   loadIndex: number | null;
+  /** Rated load per tyre in kg, as a caravan compliance plate gives it; used instead of the load index when set. */
+  loadKg: number | null;
 }
 
 export interface UteSpec {
@@ -134,8 +136,8 @@ export interface CaravanSpec {
     gtm: number | null;
     tare: number | null;
     tareBall: number | null;
-    /** Rated capacity of each axle, from the axle or compliance plate. */
-    axleRating: number | null;
+    /** Trailer gross axle load rating (TGALR): what the whole axle group may carry, from the compliance plate. */
+    tgalr: number | null;
   };
 }
 

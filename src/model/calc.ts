@@ -13,6 +13,7 @@ import type {
   Host,
   LoadItem,
   Setup,
+  TyreSpec,
   UteReadings,
   UteSpec,
   Vec3,
@@ -20,7 +21,7 @@ import type {
 import { kg, mm, num, pct, signedKg } from './format';
 import { axleCentre } from './geometry';
 import { trailerName } from './trailers';
-import { loadIndexKg, tyreDiameter } from './tyres';
+import { loadIndexKg, tyreDiameter, tyreLoadKg } from './tyres';
 
 export type WheelId = 'fl' | 'fr' | 'rl' | 'rr';
 export type WheelLoads = Record<WheelId, number>;
@@ -547,6 +548,10 @@ function limitStatus(value: number, limit: number | null, s: CheckSettings): Che
   return 'ok';
 }
 
+function tyreBasis(tyre: TyreSpec): string {
+  return tyre.loadKg != null ? `Rated ${kg(tyre.loadKg)} per tyre.` : `Load index ${tyre.loadIndex} = ${kg(loadIndexKg(tyre.loadIndex)!)} per tyre.`;
+}
+
 function limitCheck(
   s: CheckSettings,
   id: string,
@@ -705,10 +710,10 @@ export function compute(setup: Setup): Result {
     checks.push(limitCheck(s, 'payload', 'Vehicle', 'Payload (mass above kerb)', gross - lim.kerb, lim.payload,
       `Current mass ${kg(gross)} minus kerb ${kg(lim.kerb)}.`));
   }
-  const tyreKg = loadIndexKg(ute.tyre.loadIndex);
+  const tyreKg = tyreLoadKg(ute.tyre);
   for (const w of WHEEL_IDS) {
     checks.push(limitCheck(s, `tyre_${w}`, 'Tyres', `${WHEEL_NAMES[w]} tyre`, total[w], tyreKg,
-      tyreKg ? `Load index ${ute.tyre.loadIndex} = ${kg(tyreKg)} per tyre.` : 'Enter the tyre load index.'));
+      tyreKg ? tyreBasis(ute.tyre) : 'Enter the tyre load index.'));
   }
 
   if (caravanResult && hitchResult) {
@@ -756,20 +761,25 @@ export function compute(setup: Setup): Result {
       limitCheck(s, 'gtm', 'Trailer', 'Axle group vs GTM', c.axle, cv.limits.gtm,
         hitchResult.wdhToCaravan > 0 ? `Includes ${kg(hitchResult.wdhToCaravan)} moved by the WDH.` : undefined),
     );
+    // The TGALR rates the whole axle group; identical tandem axles each carry half of it.
     const n = c.axleLoads.length;
+    const tgalr = cv.limits.tgalr;
+    const noTgalr = 'Enter the TGALR (trailer gross axle load rating) from the compliance plate.';
+    if (n > 1) checks.push(limitCheck(s, 'tgalr', 'Trailer', 'Axle group vs TGALR', c.axle, tgalr, tgalr ? undefined : noTgalr));
     c.axleLoads.forEach((load, i) => {
       checks.push(
-        limitCheck(s, `cvAxle_${i}`, 'Trailer', n > 1 ? `${Tc} ${i === 0 ? 'front' : 'rear'} axle` : `${Tc} axle`, load, cv.limits.axleRating,
-          cv.limits.axleRating ? undefined : 'Enter the axle rating from the axle or compliance plate.'),
+        limitCheck(s, `cvAxle_${i}`, 'Trailer', n > 1 ? `${Tc} ${i === 0 ? 'front' : 'rear'} axle` : `${Tc} axle vs TGALR`, load, tgalr ? tgalr / n : null,
+          !tgalr ? noTgalr : n > 1 ? `Its share of the TGALR, assuming identical axles.` : undefined),
       );
     });
     // Each side's share of the group, applied to the heaviest axle, gives the most loaded tyre.
-    const cvTyreKg = loadIndexKg(cv.tyre.loadIndex);
+    const cvTyreKg = tyreLoadKg(cv.tyre);
+    const cvTyreNote = cvTyreKg ? tyreBasis(cv.tyre) : 'Enter the tyre load rating or load index.';
     const heaviest = Math.max(...c.axleLoads);
     const sideTyre = (side: number) => (c.axle > 0 ? (heaviest * side) / c.axle : side / n);
     checks.push(
-      limitCheck(s, 'cvTyre_left', 'Trailer', `${Tc} left tyre${n > 1 ? ' (heaviest)' : ''}`, sideTyre(c.axleLeft), cvTyreKg),
-      limitCheck(s, 'cvTyre_right', 'Trailer', `${Tc} right tyre${n > 1 ? ' (heaviest)' : ''}`, sideTyre(c.axleRight), cvTyreKg),
+      limitCheck(s, 'cvTyre_left', 'Trailer', `${Tc} left tyre${n > 1 ? ' (heaviest)' : ''}`, sideTyre(c.axleLeft), cvTyreKg, cvTyreNote),
+      limitCheck(s, 'cvTyre_right', 'Trailer', `${Tc} right tyre${n > 1 ? ' (heaviest)' : ''}`, sideTyre(c.axleRight), cvTyreKg, cvTyreNote),
     );
     if (cv.limits.atm && towCap && cv.limits.atm > towCap) {
       checks.push({

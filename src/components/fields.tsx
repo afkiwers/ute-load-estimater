@@ -95,6 +95,20 @@ export function NumField({ path, label, unit = 'kg', hint, derived, flag, nullab
   );
 }
 
+/** A value worked out from other fields, shown in line with them. */
+export function ReadField({ label, value, unit = 'kg', hint }: { label: ReactNode; value: number | null; unit?: string; hint?: ReactNode }) {
+  return (
+    <div className="field field-read">
+      <span className="field-label">{label}</span>
+      <span className="field-input">
+        <input readOnly tabIndex={-1} value={value == null ? '' : num(value)} placeholder="–" aria-label={typeof label === 'string' ? label : undefined} />
+        {unit && <span className="unit">{unit}</span>}
+      </span>
+      {hint && <span className="field-hint">{hint}</span>}
+    </div>
+  );
+}
+
 export function TextField({ path, label, hint }: { path: string; label: ReactNode; hint?: ReactNode }) {
   const value = useActive((s) => getPath(s, path) as string);
   const placeholder = useActive((s) => s.placeholders.includes(path));

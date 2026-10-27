@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { WHEEL_IDS, overallStatus } from '../model/calc';
 import { kg, mm, num, pct } from '../model/format';
-import { loadIndexKg } from '../model/tyres';
+import { tyreLoadKg } from '../model/tyres';
 import { trailerName } from '../model/trailers';
 import { useResult, useSetup } from '../state/result';
 import { useUi } from '../state/ui';
@@ -96,7 +96,7 @@ export function Report() {
                   <td>{w.toUpperCase()}</td>
                   <td className="r">{kg(r.ute.baseline.wheels[w])}</td>
                   <td className="r">{kg(r2[w])}</td>
-                  <td className="r">{loadIndexKg(u.tyre.loadIndex) ? kg(loadIndexKg(u.tyre.loadIndex)!) : '–'}</td>
+                  <td className="r">{tyreLoadKg(u.tyre) ? kg(tyreLoadKg(u.tyre)!) : '–'}</td>
                 </tr>
               ))}
               <tr>
@@ -141,14 +141,16 @@ export function Report() {
                   </tr>
                   <tr>
                     <td>{Tc} axle group</td>
-                    <td className="r">{kg(r.caravan.axle)}</td>
+                    <td className="r">
+                      {kg(r.caravan.axle)}
+                      {setup.caravan.limits.tgalr ? ` (TGALR ${num(setup.caravan.limits.tgalr)})` : ''}
+                    </td>
                   </tr>
                   {r.caravan.axleLoads.length > 1 && (
                     <tr>
                       <td>{Tc} front / rear axle</td>
                       <td className="r">
                         {r.caravan.axleLoads.map((x) => num(x)).join(' / ')} kg
-                        {setup.caravan.limits.axleRating ? ` (rating ${num(setup.caravan.limits.axleRating)} each)` : ''}
                       </td>
                     </tr>
                   )}

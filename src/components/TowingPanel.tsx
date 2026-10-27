@@ -8,7 +8,7 @@ import { TRAILER_KINDS, trailerInfo, trailerName } from '../model/trailers';
 import { useUi } from '../state/ui';
 import { useStore } from '../state/store';
 import { useResult, useSetup } from '../state/result';
-import { IssueList, NumField, Section, TextField, Toggle, flagFor } from './fields';
+import { IssueList, NumField, ReadField, Section, TextField, Toggle, flagFor } from './fields';
 
 const SOURCE_TEXT: Record<CaravanBaselineSource, string> = {
   measured: 'Baseline: measured',
@@ -66,7 +66,9 @@ export function TowingPanel() {
   const cv = setup.caravan;
   const base = result.caravan?.baseline;
   const issues = base?.issues ?? [];
-  const tyreKg = loadIndexKg(cv.tyre.loadIndex);
+  const indexKg = loadIndexKg(cv.tyre.loadIndex);
+  const { atm, tare } = cv.limits;
+  const loadCapacity = atm != null && tare != null ? atm - tare : null;
   const tandem = cv.axles.length > 1;
   const T = trailerName(cv.kind);
   const Tc = trailerName(cv.kind, true);
@@ -181,13 +183,15 @@ export function TowingPanel() {
             <IssueList issues={issues} />
           </Section>
 
-          <Section title={`${Tc} plate`}>
+          <Section title={`${Tc} compliance plate`}>
+            <p className="section-note">Laid out like the ratings and masses on the plate.</p>
             <div className="fields">
-              <NumField path="caravan.limits.atm" label="ATM" />
+              <NumField path="caravan.limits.tare" label="Tare mass" />
+              <NumField path="caravan.limits.tareBall" label="Coupling load at tare mass" />
               <NumField path="caravan.limits.gtm" label="GTM" />
-              <NumField path="caravan.limits.tare" label="Tare" />
-              <NumField path="caravan.limits.tareBall" label="Tare ball weight" />
-              <NumField path="caravan.limits.axleRating" label={tandem ? 'Axle rating (each)' : 'Axle rating'} hint="From the axle or compliance plate." />
+              <ReadField label="Load capacity" value={loadCapacity} hint="ATM minus tare mass." />
+              <NumField path="caravan.limits.atm" label="ATM" />
+              <NumField path="caravan.limits.tgalr" label="TGALR" hint={`Trailer gross axle load rating: what the axle group may carry${tandem ? ', shared by both axles' : ''}.`} />
             </div>
             <div style={{ marginTop: 8 }}>
               <Toggle path="caravan.hasBrakes" label="Caravan has brakes" />
@@ -241,8 +245,14 @@ export function TowingPanel() {
 
           <Section title={`${Tc} tyres`}>
             <div className="fields">
-              <TextField path="caravan.tyre.size" label="Size" />
-              <NumField path="caravan.tyre.loadIndex" label="Load index" unit="LI" hint={tyreKg ? `${kg(tyreKg)} per tyre` : undefined} />
+              <TextField path="caravan.tyre.size" label="Tyre size" />
+              <NumField path="caravan.tyre.loadKg" label="Tyre load rating" hint="Per tyre, from the plate. Overrides the load index." />
+              <NumField
+                path="caravan.tyre.loadIndex"
+                label="Load index"
+                unit="LI"
+                hint={indexKg ? `${kg(indexKg)} per tyre${cv.tyre.loadKg != null ? ', not used while a load rating is set' : ''}` : 'Printed after the tyre size, e.g. 121'}
+              />
             </div>
           </Section>
 

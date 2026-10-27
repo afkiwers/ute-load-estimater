@@ -36,7 +36,7 @@ export function cannonAlphaVantaDiesel(): UteSpec {
     overallHeight: 1924,
     frontOverhang: 950,
     tub: { length: 1485, width: 1520, depth: 540, floorHeight: 880 },
-    tyre: { size: '265/55R19', loadIndex: 109 },
+    tyre: { size: '265/55R19', loadIndex: 109, loadKg: null },
     limits: {
       gvm: 3495,
       gcm: 6555,

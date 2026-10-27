@@ -395,11 +395,11 @@ describe('caravan front and rear axle weights', () => {
     expect(b.issues.filter((i) => i.level !== 'info')).toHaveLength(0);
   });
 
-  it('shares later changes equally and checks each axle against its rating', () => {
+  it('shares later changes equally and checks each axle against its share of the TGALR', () => {
     const s = bareSetup();
     s.towing = true;
     s.caravan.axles = [4800, 5800];
-    s.caravan.limits.axleRating = 1240;
+    s.caravan.limits.tgalr = 2480;
     s.caravanReadings = { ...emptyCaravanReadings(), ball: 250, axleFront: 1220, axleRear: 1130 };
     s.items = [item({ host: 'caravan', mass: 100, pos: { x: 5300, y: 0, z: 800 } })];
     const r = compute(s);
@@ -407,17 +407,51 @@ describe('caravan front and rear axle weights', () => {
     expect(r.caravan!.axleLoads[1]).toBeCloseTo(1180);
     expect(r.checks.find((c) => c.id === 'cvAxle_0')!.status).toBe('over');
     expect(r.checks.find((c) => c.id === 'cvAxle_1')!.status).toBe('near');
+    expect(r.checks.find((c) => c.id === 'tgalr')).toMatchObject({ value: 2450, limit: 2480, status: 'near' });
     // The heaviest axle sets the tyre check.
     expect(r.checks.find((c) => c.id === 'cvTyre_left')!.value).toBeCloseTo(1270 / 2);
   });
 
-  it('flags the new axle rating as a placeholder on old saves', () => {
-    const old = structuredClone(newSetup()) as unknown as Record<string, any>;
-    delete old.caravan.limits.axleRating;
-    old.placeholders = [];
-    const s = normalizeSetup(old);
-    expect(s.caravan.limits.axleRating).toBe(1600);
-    expect(s.placeholders).toContain('caravan.limits.axleRating');
+  it('checks a single axle against the whole TGALR', () => {
+    const s = bareSetup();
+    s.towing = true;
+    s.caravan.axles = [5300];
+    s.caravan.limits.tgalr = 2000;
+    s.caravanReadings = { ...emptyCaravanReadings(), ball: 250, axle: 2100 };
+    const r = compute(s);
+    expect(r.checks.find((c) => c.id === 'tgalr')).toBeUndefined();
+    expect(r.checks.find((c) => c.id === 'cvAxle_0')).toMatchObject({ label: 'Caravan axle vs TGALR', value: 2100, limit: 2000, status: 'over' });
+  });
+});
+
+describe('compliance plate', () => {
+  // Ratings and masses as printed on a tandem caravan's plate, tyre load rating in kg.
+  const plated = () => {
+    const s = bareSetup();
+    s.towing = true;
+    s.caravan.axles = [4900, 5800];
+    s.caravan.limits = { tare: 2689, tareBall: 174, gtm: 3326, atm: 3500, tgalr: 3500 };
+    s.caravan.tyre = { size: '265/75R16', loadIndex: null, loadKg: 1550 };
+    return s;
+  };
+
+  it('checks against the plate values as entered', () => {
+    const r = compute(plated());
+    const limit = (id: string) => r.checks.find((c) => c.id === id)?.limit;
+    expect(limit('atm')).toBe(3500);
+    expect(limit('gtm')).toBe(3326);
+    expect(limit('tgalr')).toBe(3500);
+    expect(limit('cvAxle_0')).toBe(1750);
+    expect(limit('cvTyre_left')).toBe(1550);
+    expect(r.checks.find((c) => c.id === 'cvTyre_left')!.detail).toBe('Rated 1,550 kg per tyre.');
+  });
+
+  it('uses the tyre load rating in kg over the load index, and the index when no rating is given', () => {
+    const s = plated();
+    s.caravan.tyre.loadIndex = 121;
+    expect(compute(s).checks.find((c) => c.id === 'cvTyre_left')!.limit).toBe(1550);
+    s.caravan.tyre.loadKg = null;
+    expect(compute(s).checks.find((c) => c.id === 'cvTyre_left')!.limit).toBe(1450);
   });
 });
 
@@ -434,7 +468,7 @@ describe('trailer types', () => {
     expect(ballPct).toBeGreaterThan(5);
     expect(ballPct).toBeLessThan(15);
     expect(cv.limits.gtm!).toBeLessThanOrEqual(cv.limits.atm!);
-    expect(cv.limits.axleRating! * cv.axles.length).toBeGreaterThanOrEqual(cv.limits.gtm!);
+    expect(cv.limits.tgalr!).toBeGreaterThanOrEqual(cv.limits.gtm!);
   });
 
   it('switches type: new preset, readings cleared, old trailer items removed', () => {

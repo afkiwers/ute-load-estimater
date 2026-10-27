@@ -1,3 +1,5 @@
+import type { TyreSpec } from './types';
+
 // ISO / ETRTO load index table (single fitment), kg per tyre.
 const LOAD_INDEX: Record<number, number> = {
   70: 335, 71: 345, 72: 355, 73: 365, 74: 375, 75: 387, 76: 400, 77: 412, 78: 425, 79: 437,
@@ -15,6 +17,11 @@ export const LOAD_INDEX_MAX = 130;
 export function loadIndexKg(li: number | null | undefined): number | null {
   if (li == null) return null;
   return LOAD_INDEX[Math.round(li)] ?? null;
+}
+
+/** Rated load per tyre: the kg rating when given, otherwise from the load index. */
+export function tyreLoadKg(tyre: TyreSpec): number | null {
+  return tyre.loadKg ?? loadIndexKg(tyre.loadIndex);
 }
 
 /**

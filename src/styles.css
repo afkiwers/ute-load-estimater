@@ -396,6 +396,7 @@ button {
 
 .field {
   display: grid;
+  align-content: start;
   gap: 3px;
   min-width: 0;
 }
@@ -448,6 +449,11 @@ button {
   display: flex;
   align-items: center;
   border-left: 1px solid var(--border);
+}
+
+.field-read .field-input {
+  background: var(--panel-2);
+  border-style: dashed;
 }
 
 .field-warn .field-input {

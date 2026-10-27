@@ -30,7 +30,7 @@ export function trailerName(kind: TrailerKind, capital = false): string {
 }
 
 // Small-trailer tyre: 185/80R14 (652 mm), load index 102 = 850 kg.
-const SMALL_TYRE = { size: '185/80R14', loadIndex: 102 };
+const SMALL_TYRE = { size: '185/80R14', loadIndex: 102, loadKg: null };
 
 export function trailerPreset(kind: TrailerKind): CaravanSpec {
   switch (kind) {
@@ -46,8 +46,8 @@ export function trailerPreset(kind: TrailerKind): CaravanSpec {
         bodyWidth: 2400,
         bodyHeight: 2050,
         floorHeight: 760,
-        tyre: { size: '235/75R15', loadIndex: 109 },
-        limits: { atm: 3000, gtm: 2800, tare: 2350, tareBall: 230, axleRating: 1600 },
+        tyre: { size: '235/75R15', loadIndex: 109, loadKg: null },
+        limits: { atm: 3000, gtm: 2800, tare: 2350, tareBall: 230, tgalr: 3200 },
       };
     case 'boat':
       // "Body" is the bunk frame from the winch post back; the floor height is the bunk tops.
@@ -63,7 +63,7 @@ export function trailerPreset(kind: TrailerKind): CaravanSpec {
         bodyHeight: 900,
         floorHeight: 650,
         tyre: { ...SMALL_TYRE },
-        limits: { atm: 1400, gtm: 1300, tare: 380, tareBall: 35, axleRating: 1400 },
+        limits: { atm: 1400, gtm: 1300, tare: 380, tareBall: 35, tgalr: 1400 },
       };
     case 'enclosed':
       return {
@@ -78,7 +78,7 @@ export function trailerPreset(kind: TrailerKind): CaravanSpec {
         bodyHeight: 1600,
         floorHeight: 620,
         tyre: { ...SMALL_TYRE },
-        limits: { atm: 2000, gtm: 1850, tare: 750, tareBall: 90, axleRating: 1000 },
+        limits: { atm: 2000, gtm: 1850, tare: 750, tareBall: 90, tgalr: 2000 },
       };
     case 'open':
       return {
@@ -93,7 +93,7 @@ export function trailerPreset(kind: TrailerKind): CaravanSpec {
         bodyHeight: 400,
         floorHeight: 620,
         tyre: { ...SMALL_TYRE },
-        limits: { atm: 750, gtm: 700, tare: 320, tareBall: 35, axleRating: 1000 },
+        limits: { atm: 750, gtm: 700, tare: 320, tareBall: 35, tgalr: 1000 },
       };
   }
 }
@@ -114,6 +114,6 @@ export function trailerPlaceholders(spec: CaravanSpec): string[] {
     'caravan.limits.gtm',
     'caravan.limits.tare',
     'caravan.limits.tareBall',
-    'caravan.limits.axleRating',
+    'caravan.limits.tgalr',
   ];
 }
