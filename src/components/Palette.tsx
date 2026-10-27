@@ -114,6 +114,7 @@ export function Palette() {
   const [showForm, setShowForm] = useState(false);
   const towing = useStore((s) => s.setups[s.activeId].towing);
   const kind = useStore((s) => s.setups[s.activeId].caravan.kind);
+  const suv = useStore((s) => s.setups[s.activeId].ute.bodyStyle === 'suv');
   // Trailer items only for the trailer being towed; ute items always.
   const templates = ITEM_TEMPLATES.filter((t) => !t.kinds || (towing && t.kinds.includes(kind)));
   const categories = [...new Set(templates.map((t) => t.category))];
@@ -126,7 +127,7 @@ export function Palette() {
         </button>
       </div>
       <p className="palette-hint">
-        <span className="only-mouse">Drag onto the ute or trailer in the 3D view. Change the mass and position afterwards.</span>
+        <span className="only-mouse">Drag onto the vehicle or trailer in the 3D view. Change the mass and position afterwards.</span>
         <span className="only-touch">Tap + to add an item at its usual spot, then change its mass and position.</span>
       </p>
 
@@ -148,7 +149,7 @@ export function Palette() {
 
       {categories.map((cat) => (
         <div key={cat}>
-          <div className="panel-title">{cat}</div>
+          <div className="panel-title">{suv && cat === 'Tub' ? 'Cargo area' : cat}</div>
           {templates.filter((t) => t.category === cat).map((t) => (
             <TemplateChip key={t.id} tpl={t} />
           ))}

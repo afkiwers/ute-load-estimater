@@ -220,6 +220,42 @@ function TubDetails({ g, m, shape }: { g: G; m: Materials; shape: UteShape }) {
   );
 }
 
+/** An SUV's tailgate, tail lights, bumper and roof spoiler, and the cargo floor inside behind the rear seats. */
+function SuvRear({ g, m }: { g: G; m: Materials }) {
+  const half = g.bodyW / 2;
+  const inner = g.tubInnerW / 2;
+  const zb = g.bumperBottom;
+  const yy = (side: number, a: number, b: number) => ({ y0: Math.min(side * a, side * b), y1: Math.max(side * a, side * b) });
+  return (
+    <group>
+      <RBox b={{ x0: g.tubFront, x1: g.tubRear, y0: -inner, y1: inner, z0: g.tubFloor - 40, z1: g.tubFloor }} r={8} material={m.interior} surface="tub" />
+      {[-1, 1].map((side) => (
+        <group key={side}>
+          {/* Tail lights round the rear corners, with a light guide and reverse lamp; bumper reflectors */}
+          <RBox b={{ x0: g.sRear - 90, x1: g.sRear + 6, ...yy(side, half - 330, half - 20), z0: g.zBelt - 230, z1: g.zBelt - 30 }} r={30} material={m.gloss} />
+          <RBox b={{ x0: g.sRear, x1: g.sRear + 12, ...yy(side, half - 310, half - 45), z0: g.zBelt - 105, z1: g.zBelt - 70 }} r={8} material={m.red} />
+          <RBox b={{ x0: g.sRear, x1: g.sRear + 12, ...yy(side, half - 310, half - 240), z0: g.zBelt - 200, z1: g.zBelt - 130 }} r={8} material={m.led} />
+          <RBox b={{ x0: g.sRear + 70, x1: g.sRear + 82, ...yy(side, half - 170, half - 110), z0: zb + 70, z1: zb + 130 }} r={4} material={m.red} />
+        </group>
+      ))}
+      {/* Tailgate garnish with the handle, number plate recess */}
+      <RBox b={{ x0: g.sRear - 6, x1: g.sRear + 10, y0: -(half - 350), y1: half - 350, z0: g.zBelt - 130, z1: g.zBelt - 75 }} r={12} material={m.gloss} />
+      <RBox b={{ x0: g.sRear - 6, x1: g.sRear + 10, y0: -250, y1: 250, z0: zb + 290, z1: zb + 420 }} r={12} material={m.plastic} />
+
+      {/* Roof spoiler over the tailgate glass, with the high-mounted stop lamp */}
+      <RBox b={{ x0: g.sRoofBack - 80, x1: g.sRoofBack + 110, y0: -(g.roofHalf - 30), y1: g.roofHalf - 30, z0: g.zRoof - 25, z1: g.zRoof + 12 }} r={18} material={m.paint} />
+      <RBox b={{ x0: g.sRoofBack + 95, x1: g.sRoofBack + 112, y0: -220, y1: 220, z0: g.zRoof - 22, z1: g.zRoof - 4 }} r={6} material={m.red} />
+
+      {/* Rear bumper with step pad */}
+      <RBox b={{ x0: g.sRear - 100, x1: g.sRear + 90, y0: -half + 70, y1: half - 70, z0: zb - 10, z1: zb + 220 }} r={45} material={m.paint} surface="bumper" />
+      <RBox b={{ x0: g.sRear + 10, x1: g.sRear + 96, y0: -0.28 * g.bodyW, y1: 0.28 * g.bodyW, z0: zb + 196, z1: zb + 232 }} r={10} material={m.plastic} surface="bumper" />
+      <mesh position={toWorld('ute', { x: g.sRear - 20, y: -0.3 * g.bodyW, z: zb - 40 }, 0)} rotation={[0, 0, Math.PI / 2]} material={m.chrome}>
+        <cylinderGeometry args={[0.032, 0.032, 0.2, 18]} />
+      </mesh>
+    </group>
+  );
+}
+
 function Underbody({ g, m, ute }: { g: G; m: Materials; ute: UteSpec }) {
   const W = g.bodyW;
   return (
@@ -240,11 +276,11 @@ function Underbody({ g, m, ute }: { g: G; m: Materials; ute: UteSpec }) {
   );
 }
 
-/** Panoramic sunroof: tinted front and rear glass in a black frame, lying on the roof's crown between the rails. */
+/** Panoramic sunroof: tinted front and rear glass in a black frame, lying on the roof's crown between the rails. On an SUV it ends over the rear doors. */
 function Sunroof({ g, m }: { g: G; m: Materials }) {
   const panels = useMemo(() => {
     const s0 = g.sWindscreenTop + 150;
-    const s1 = g.sRoofBack - 190;
+    const s1 = g.cPillar === null ? g.sRoofBack - 190 : g.cPillar - 60;
     const w = g.roofHalf - 230;
     const bar = s0 + 0.48 * (s1 - s0);
     return {
@@ -263,7 +299,10 @@ function Sunroof({ g, m }: { g: G; m: Materials }) {
   );
 }
 
-/** Dual-cab ute with a factory tub, modelled on the Cannon Alpha's rounded body and scaled to the entered dimensions. */
+/**
+ * Dual-cab ute with a factory tub, modelled on the Cannon Alpha's rounded body, or a five-seat SUV on the same
+ * front end. Scaled to the entered dimensions.
+ */
 export function UteModel({ ute, hitch, xray }: Props) {
   const g = useMemo(() => uteGeometry(ute, hitch), [ute, hitch]);
   const shape = useMemo(() => makeUteShape(g), [g]);
@@ -282,7 +321,8 @@ export function UteModel({ ute, hitch, xray }: Props) {
   const protX = sF + 240;
   const protTilt = Math.atan2(shape.topZ(protX + 50) - shape.topZ(protX - 50), 100);
   const protZ = shape.topZ(protX) + shape.section(protX).crown;
-  const doorLines = [g.sWindscreen + 120, g.bPillar, g.sCabBack - 40, g.tubFront - 45];
+  const doorLines = g.cPillar === null ? [g.sWindscreen + 120, g.bPillar, g.sCabBack - 40, g.tubFront - 45] : [g.sWindscreen + 120, g.bPillar, g.cPillar];
+  const handles = g.cPillar === null ? [g.bPillar - 230, g.sCabBack - 290] : [g.bPillar - 230, g.cPillar - 250];
 
   return (
     <group>
@@ -342,7 +382,7 @@ export function UteModel({ ute, hitch, xray }: Props) {
                 />
               );
             })}
-            {[g.bPillar - 230, g.sCabBack - 290].map((x) => {
+            {handles.map((x) => {
               const z = g.zBelt - 160;
               const y = shape.sideY(x + 75, z);
               return <RBox key={x} b={{ x0: x, x1: x + 150, ...yy(y - 6, y + 16), z0: z, z1: z + 36 }} r={14} material={m.chrome} />;
@@ -353,7 +393,7 @@ export function UteModel({ ute, hitch, xray }: Props) {
       })}
 
       <Interior g={g} m={m} />
-      <TubDetails g={g} m={m} shape={shape} />
+      {g.suv ? <SuvRear g={g} m={m} /> : <TubDetails g={g} m={m} shape={shape} />}
       <Underbody g={g} m={m} ute={ute} />
 
       {/* Tow bar and ball */}

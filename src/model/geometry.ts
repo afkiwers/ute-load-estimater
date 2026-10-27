@@ -1,11 +1,13 @@
-// Derived body geometry for the generic ute and caravan, shared by the 3D view
-// and the default item placements. Proportions are generic dual-cab ones,
-// scaled to the entered dimensions.
+// Derived body geometry for the generic ute, SUV and caravan, shared by the 3D view
+// and the default item placements. Proportions are generic dual-cab and five-seat
+// SUV ones, scaled to the entered dimensions.
 
 import type { CaravanSpec, HitchSpec, Host, ItemSize, Placement, Setup, UteSpec, Vec3 } from './types';
 import { rimDiameter, tyreDiameter, tyreWidth } from './tyres';
 
 export interface UteGeometry {
+  /** A five-seat SUV: the cabin runs to the tailgate and the "tub" is the cargo floor inside. */
+  suv: boolean;
   L: number;
   sFront: number;
   sRear: number;
@@ -25,8 +27,11 @@ export interface UteGeometry {
   sWindscreen: number;
   sWindscreenTop: number;
   sRoofBack: number;
+  /** Back of the cab (ute) or of the glasshouse at the tailgate (SUV). */
   sCabBack: number;
   bPillar: number;
+  /** SUV only: the back of the rear doors. */
+  cPillar: number | null;
   /** Half-width of the greenhouse at the beltline and at the roof (tumblehome). */
   beltHalf: number;
   roofHalf: number;
@@ -41,6 +46,7 @@ export interface UteGeometry {
 }
 
 export function uteGeometry(ute: UteSpec, hitch: HitchSpec): UteGeometry {
+  const suv = ute.bodyStyle === 'suv';
   const L = ute.wheelbase;
   const sFront = -ute.frontOverhang;
   const rearOverhang = Math.max(400, ute.overallLength - L - ute.frontOverhang);
@@ -56,30 +62,36 @@ export function uteGeometry(ute: UteSpec, hitch: HitchSpec): UteGeometry {
   const zCowl = zBonnet + 40;
   const tubRail = ute.tub.floorHeight + ute.tub.depth;
   // Modern utes carry the beltline through to the tub rails.
-  const zBelt = Math.max(zBonnet + 90, Math.min(tubRail - 30, zBonnet + 200));
+  const zBelt = suv ? zBonnet + 150 : Math.max(zBonnet + 90, Math.min(tubRail - 30, zBonnet + 200));
   const bumperBottom = Math.max(300, wheelR * 1.08);
   const bodyBottom = wheelR + 80;
 
-  const tubRear = sRear - 140;
+  const tubRear = sRear - (suv ? 110 : 140);
   const tubFront = tubRear - ute.tub.length;
-  const sCabBack = tubFront - 90;
-  const sWindscreen = sFront + 0.3 * ute.overallLength;
+  const sCabBack = suv ? sRear - 50 : tubFront - 90;
+  const sWindscreen = sFront + (suv ? 0.32 : 0.3) * ute.overallLength;
   const sWindscreenTop = sWindscreen + (zRoof - zCowl) * 1.15;
-  const sRoofBack = sCabBack - 90;
-  const cabLen = sCabBack - sWindscreen;
+  // An SUV's tailgate glass leans forward from the bumper to the roof.
+  const sRoofBack = suv ? sRear - 330 : sCabBack - 90;
+  // The seats fill the cab, or the SUV's cabin up to the cargo floor.
+  const cabEnd = suv ? tubFront - 90 : sCabBack;
+  const cabLen = cabEnd - sWindscreen;
 
   const seatZ = Math.round(bumperBottom + 0.4 * (zRoof - bumperBottom));
-  const frontRow = sWindscreen + 0.36 * cabLen;
-  const rearRow = sWindscreen + 0.76 * cabLen;
+  const frontRow = Math.round(sWindscreen + 0.36 * cabLen);
+  const rearRow = Math.round(sWindscreen + 0.76 * cabLen);
+  const front = Math.round(0.24 * bodyW);
+  const rear = Math.round(0.26 * bodyW);
   const seats: Vec3[] = [
-    { x: frontRow, y: 0.24 * bodyW, z: seatZ },
-    { x: frontRow, y: -0.24 * bodyW, z: seatZ },
-    { x: rearRow, y: 0.26 * bodyW, z: seatZ },
-    { x: rearRow, y: -0.26 * bodyW, z: seatZ },
+    { x: frontRow, y: front, z: seatZ },
+    { x: frontRow, y: -front, z: seatZ },
+    { x: rearRow, y: rear, z: seatZ },
+    { x: rearRow, y: -rear, z: seatZ },
     { x: rearRow, y: 0, z: seatZ },
   ];
 
   return {
+    suv,
     L,
     sFront,
     sRear,
@@ -99,7 +111,8 @@ export function uteGeometry(ute: UteSpec, hitch: HitchSpec): UteGeometry {
     sWindscreenTop,
     sRoofBack,
     sCabBack,
-    bPillar: sWindscreen + 0.52 * cabLen,
+    bPillar: sWindscreen + (suv ? 0.55 : 0.52) * cabLen,
+    cPillar: suv ? Math.min(cabEnd + 60, L - 150) : null,
     beltHalf: bodyW / 2 - 70,
     roofHalf: bodyW / 2 - 175,
     tubFront,

@@ -1,16 +1,18 @@
-// GWM Cannon and Cannon Alpha dual-cab utes, as sold in Australia.
+// Dual-cab utes and SUVs as sold in Australia: the GWM Cannon and Cannon Alpha, the
+// Isuzu D-MAX and the Isuzu MU-X.
 //
-// The current range comes from GWM Australia's brochures (Cannon Alpha, current at
-// 14/10/2026; Cannon, 16/10/2026). Earlier models are no longer in a brochure; their
+// The current GWM range comes from GWM Australia's brochures (Cannon Alpha, current at
+// 14/10/2026; Cannon, 16/10/2026). Earlier GWM models are no longer in a brochure; their
 // kerb weight, GVM, GCM, payload and towing come from Australian spec listings
-// (CarExpert, carsales, Drive, CarsGuide, 4X4 Australia).
+// (CarExpert, carsales, Drive, CarsGuide, 4X4 Australia). The Isuzus come from Isuzu UTE
+// Australia's 25.5MY D-MAX and MU-X brochures.
 //
 // Each model lists the setup paths that hold typical rather than published values, so
 // the app marks them as placeholders to check against the vehicle's placard.
 
 import type { UteLimits, UteSpec } from './types';
 
-export type VehicleGroup = 'GWM Cannon Alpha' | 'GWM Cannon' | 'Earlier models';
+export type VehicleGroup = 'GWM Cannon Alpha' | 'GWM Cannon' | 'Earlier GWM models' | 'Isuzu D-MAX' | 'Isuzu MU-X';
 
 export interface VehicleModel {
   id: string;
@@ -24,15 +26,22 @@ export interface VehicleModel {
 
 export const DEFAULT_VEHICLE = 'alpha-vanta-30d';
 
-/** Published for no model. */
-const ALWAYS_TYPICAL = ['ute.trackFront', 'ute.trackRear', 'ute.frontOverhang', 'ute.tub.floorHeight'];
+/** Not in any of the maker's brochures. Isuzu gives the track and front overhang, but only the kerb weight with a full tank. */
+const UNPUBLISHED = {
+  GWM: ['ute.trackFront', 'ute.trackRear', 'ute.frontOverhang', 'ute.tub.floorHeight'],
+  Isuzu: ['ute.tub.floorHeight', 'ute.kerbFrontPct', 'ute.limits.tare', 'ute.tyre.loadIndex'],
+};
 const TUB = ['ute.tub.length', 'ute.tub.width', 'ute.tub.depth'];
 const OVERALL = ['ute.overallLength', 'ute.overallWidth', 'ute.overallHeight'];
 const AXLES = ['ute.limits.frontAxle', 'ute.limits.rearAxle'];
 
-type Body = Pick<UteSpec, 'wheelbase' | 'trackFront' | 'trackRear' | 'overallLength' | 'overallWidth' | 'overallHeight' | 'frontOverhang' | 'tub' | 'kerbFrontPct'>;
+type Body = Pick<
+  UteSpec,
+  'bodyStyle' | 'wheelbase' | 'trackFront' | 'trackRear' | 'overallLength' | 'overallWidth' | 'overallHeight' | 'frontOverhang' | 'tub' | 'kerbFrontPct'
+>;
 
 const ALPHA: Body = {
+  bodyStyle: 'ute',
   wheelbase: 3350,
   trackFront: 1635,
   trackRear: 1635,
@@ -45,6 +54,7 @@ const ALPHA: Body = {
 };
 
 const CANNON: Body = {
+  bodyStyle: 'ute',
   wheelbase: 3230,
   trackFront: 1600,
   trackRear: 1600,
@@ -70,7 +80,7 @@ interface Def {
   tyre: { size: string; loadIndex: number };
   /** Panoramic sunroof as standard (brochure "Panoramic Sunroof" or "Sunroof"). */
   sunroof?: true;
-  /** Paths whose values here are typical, on top of ALWAYS_TYPICAL. */
+  /** Paths whose values here are typical, on top of the maker's UNPUBLISHED ones. */
   typical: string[];
 }
 
@@ -263,12 +273,12 @@ const DEFS: Def[] = [
     typical: ['ute.tyre.loadIndex'],
   },
 
-  // Earlier models, from spec listings. Axle limits, tare and tub sizes are typical
+  // Earlier GWM models, from spec listings. Axle limits, tare and tub sizes are typical
   // values from the closest current model.
   {
     id: 'alpha-ultra-24d',
     sunroof: true,
-    group: 'Earlier models',
+    group: 'Earlier GWM models',
     name: 'GWM Cannon Alpha Ultra 2.4L diesel',
     years: '2024–2026',
     body: ALPHA,
@@ -278,7 +288,7 @@ const DEFS: Def[] = [
   },
   {
     id: 'alpha-lux-24d',
-    group: 'Earlier models',
+    group: 'Earlier GWM models',
     name: 'GWM Cannon Alpha Lux 2.4L diesel',
     years: '2024–2026',
     body: ALPHA,
@@ -289,7 +299,7 @@ const DEFS: Def[] = [
   {
     id: 'alpha-ultra-hybrid',
     sunroof: true,
-    group: 'Earlier models',
+    group: 'Earlier GWM models',
     name: 'GWM Cannon Alpha Ultra Hybrid 2.0L petrol',
     years: '2024–2025',
     body: ALPHA,
@@ -299,7 +309,7 @@ const DEFS: Def[] = [
   },
   {
     id: 'cannon-vanta-20d',
-    group: 'Earlier models',
+    group: 'Earlier GWM models',
     name: 'GWM Cannon Vanta 2.0L diesel',
     years: '2023–2024',
     body: CANNON,
@@ -309,7 +319,7 @@ const DEFS: Def[] = [
   },
   {
     id: 'cannon-x-20d',
-    group: 'Earlier models',
+    group: 'Earlier GWM models',
     name: 'GWM Cannon-X 2.0L diesel',
     years: '2021–2024',
     body: CANNON,
@@ -319,7 +329,7 @@ const DEFS: Def[] = [
   },
   {
     id: 'cannon-l-20d',
-    group: 'Earlier models',
+    group: 'Earlier GWM models',
     name: 'GWM Cannon-L 2.0L diesel',
     years: '2021–2024',
     body: CANNON,
@@ -329,10 +339,107 @@ const DEFS: Def[] = [
   },
 ];
 
-export const VEHICLES: VehicleModel[] = DEFS.map((d) => ({
+// Isuzu D-MAX crew cab utes and MU-X SUVs (25.5MY brochures). The cab chassis D-MAX are left
+// out: their published kerb weight is without the tray. Isuzu gives the kerb weight with a
+// full tank, so the tare (10 L of fuel) is taken as that less the rest of the diesel.
+
+/** Isuzu's limits: payload is GVM less kerb weight; every model tows 3,500 kg braked with a 350 kg tow ball download. */
+function isuzuLimits(gvm: number, gcm: number, kerb: number, tankL: number, frontAxle: number, rearAxle: number): UteLimits {
+  const tare = kerb - Math.round((tankL - 10) * 0.835);
+  return { gvm, gcm, frontAxle, rearAxle, kerb, tare, payload: gvm - kerb, brakedTow: 3500, unbrakedTow: 750, towBallMax: 350 };
+}
+
+const DMAX: Body = {
+  bodyStyle: 'ute',
+  wheelbase: 3125,
+  trackFront: 1570,
+  trackRear: 1570,
+  overallLength: 5280,
+  overallWidth: 1870,
+  overallHeight: 1785,
+  frontOverhang: 905,
+  tub: { length: 1570, width: 1530, depth: 490, floorHeight: 850 },
+  kerbFrontPct: 58,
+};
+
+const MUX: Body = {
+  bodyStyle: 'suv',
+  wheelbase: 2855,
+  trackFront: 1570,
+  trackRear: 1570,
+  overallLength: 4860,
+  overallWidth: 1870,
+  overallHeight: 1825,
+  frontOverhang: 905,
+  // Drawn as a five seater with the third row folded flat. The cargo floor is not given in mm.
+  tub: { length: 1100, width: 1300, depth: 850, floorHeight: 830 },
+  kerbFrontPct: 52,
+};
+
+const R17 = { size: '255/65R17', loadIndex: 110 };
+const R18 = { size: '265/60R18', loadIndex: 110 };
+const R20 = { size: '265/50R20', loadIndex: 107 };
+
+type Drive = '4x2' | '4x4';
+
+// The brochures give the front axle rating with the 4x4's driven front axle.
+const dmax = (id: string, name: string, drive: Drive, kerb: number, body: Partial<Body>, tyre: Def['tyre']): Def => ({
+  id,
+  group: 'Isuzu D-MAX',
+  name: `Isuzu D-MAX ${name} ${drive}`,
+  body: { ...DMAX, ...body },
+  limits: drive === '4x4' ? isuzuLimits(3100, 6000, kerb, 76, 1450, 1910) : isuzuLimits(3000, 5850, kerb, 76, 1450, 1910),
+  tyre,
+  typical: drive === '4x2' ? ['ute.limits.frontAxle'] : [],
+});
+
+const mux = (id: string, name: string, drive: Drive, kerb: number, body: Partial<Body>, tyre: Def['tyre']): Def => ({
+  id,
+  group: 'Isuzu MU-X',
+  name: `Isuzu MU-X ${name} ${drive}`,
+  body: { ...MUX, ...body },
+  limits: isuzuLimits(drive === '4x4' ? 2800 : 2700, 5900, kerb, 80, 1450, 1650),
+  tyre,
+  typical: [...TUB, ...(drive === '4x2' ? ['ute.limits.frontAxle'] : [])],
+});
+
+const LS_U: Partial<Body> = { overallLength: 5285, overallHeight: 1790 };
+const X_RIDER: Partial<Body> = { overallLength: 5305, frontOverhang: 930 };
+const LS_M: Partial<Body> = { overallHeight: 1815 };
+
+const ISUZU: Def[] = [
+  dmax('dmax-sx-22d-4x2', 'SX 2.2L diesel', '4x2', 1895, {}, R17),
+  dmax('dmax-sx-30d-4x2', 'SX 3.0L diesel', '4x2', 1950, {}, R17),
+  dmax('dmax-lsu-30d-4x2', 'LS-U 3.0L diesel', '4x2', 2015, LS_U, R18),
+  dmax('dmax-sx-22d', 'SX 2.2L diesel', '4x4', 1980, {}, R17),
+  dmax('dmax-sx-30d', 'SX 3.0L diesel', '4x4', 2035, {}, R17),
+  dmax('dmax-xrider-22d', 'X-RIDER 2.2L diesel', '4x4', 2010, X_RIDER, R17),
+  dmax('dmax-xrider-30d', 'X-RIDER 3.0L diesel', '4x4', 2060, X_RIDER, R17),
+  dmax('dmax-lsu-30d', 'LS-U 3.0L diesel', '4x4', 2105, LS_U, R18),
+  dmax('dmax-lsu-plus-30d', 'LS-U+ 3.0L diesel', '4x4', 2105, LS_U, R18),
+  dmax('dmax-xterrain-30d', 'X-TERRAIN 3.0L diesel', '4x4', 2170, { overallLength: 5310, overallWidth: 1880, overallHeight: 1810, frontOverhang: 930 }, R18),
+  dmax(
+    'dmax-blade-30d',
+    'BLADE 3.0L diesel',
+    '4x4',
+    2204,
+    { overallLength: 5308, overallWidth: 1910, overallHeight: 1810, frontOverhang: 928, trackFront: 1602, trackRear: 1602 },
+    { size: '275/65R17', loadIndex: 115 },
+  ),
+  mux('mux-lsm-22d-4x2', 'LS-M 2.2L diesel', '4x2', 1995, LS_M, R17),
+  mux('mux-lsm-22d', 'LS-M 2.2L diesel', '4x4', 2085, LS_M, R17),
+  mux('mux-lsm-30d', 'LS-M 3.0L diesel', '4x4', 2140, LS_M, R17),
+  mux('mux-lsu-22d', 'LS-U 2.2L diesel', '4x4', 2105, {}, R18),
+  mux('mux-lsu-30d', 'LS-U 3.0L diesel', '4x4', 2160, {}, R18),
+  mux('mux-lst-22d', 'LS-T 2.2L diesel', '4x4', 2130, {}, R20),
+  mux('mux-lst-30d', 'LS-T 3.0L diesel', '4x4', 2185, {}, R20),
+  mux('mux-xterrain-30d', 'X-TERRAIN 3.0L diesel', '4x4', 2195, {}, R20),
+];
+
+export const VEHICLES: VehicleModel[] = [...DEFS, ...ISUZU].map((d) => ({
   id: d.id,
   group: d.group,
-  label: d.name.replace(/^GWM /, '') + (d.years ? ` (${d.years})` : ''),
+  label: d.name.replace(/^(GWM|Isuzu) /, '') + (d.years ? ` (${d.years})` : ''),
   spec: () => ({
     model: d.id,
     name: d.name,
@@ -341,10 +448,10 @@ export const VEHICLES: VehicleModel[] = DEFS.map((d) => ({
     limits: { ...d.limits },
     sunroof: !!d.sunroof,
   }),
-  placeholders: [...new Set([...ALWAYS_TYPICAL, ...d.typical])],
+  placeholders: [...new Set([...UNPUBLISHED[d.group.startsWith('Isuzu') ? 'Isuzu' : 'GWM'], ...d.typical])],
 }));
 
-export const VEHICLE_GROUPS: VehicleGroup[] = ['GWM Cannon Alpha', 'GWM Cannon', 'Earlier models'];
+export const VEHICLE_GROUPS: VehicleGroup[] = ['GWM Cannon Alpha', 'GWM Cannon', 'Earlier GWM models', 'Isuzu D-MAX', 'Isuzu MU-X'];
 
 export function vehicleModel(id: string): VehicleModel {
   return VEHICLES.find((v) => v.id === id) ?? VEHICLES.find((v) => v.id === DEFAULT_VEHICLE)!;

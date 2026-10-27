@@ -1,5 +1,5 @@
-// The ute's rounded body, described as cross-sections along its length and
-// lofted into smooth surfaces. Everything scales with the entered dimensions.
+// The ute's (or SUV's) rounded body, described as cross-sections along its length
+// and lofted into smooth surfaces. Everything scales with the entered dimensions.
 
 import * as THREE from 'three';
 import type { UteGeometry } from '../model/geometry';
@@ -109,7 +109,7 @@ export function makeUteShape(g: UteGeometry): UteShape {
   const zb = g.bumperBottom;
   const sF = g.sFront;
   const sR = g.sRear;
-  const archR = Math.max(g.wheelR + 10, Math.min(g.wheelR + 55, g.tubFloor - 80 - g.wheelR));
+  const archR = g.suv ? g.wheelR + 45 : Math.max(g.wheelR + 10, Math.min(g.wheelR + 55, g.tubFloor - 80 - g.wheelR));
   const arches = [0, g.L];
   // Corner radii: front corners in plan, the bonnet nose, the chin, and the same at the rear.
   const Rc = 230;
@@ -140,6 +140,8 @@ export function makeUteShape(g: UteGeometry): UteShape {
     if (s < g.sWindscreen) return lerp(g.zBonnet, g.zCowl, smooth((s - b1) / 60));
     // The cowl rises to the beltline exactly where the windscreen line reaches it.
     if (s < g.sWindscreen + rise) return lerp(g.zCowl, g.zBelt, smooth((s - g.sWindscreen) / rise));
+    // An SUV keeps the beltline to the top of the tailgate.
+    if (g.suv) return s < sR - RvR ? g.zBelt : g.zBelt - curl(RvR, s - (sR - RvR));
     if (s < g.tubFront - 80) return g.zBelt;
     if (s < sR - RvR) return lerp(g.zBelt, g.tubRail, smooth((s - (g.tubFront - 80)) / 80));
     return g.tubRail - curl(RvR, s - (sR - RvR));
@@ -161,7 +163,7 @@ export function makeUteShape(g: UteGeometry): UteShape {
     const z1 = topZ(s);
     const h = z1 - z0;
     // Large shoulder radius on the bonnet and cab, tighter on the tub rails, blended before the tub.
-    const shoulder = lerp(125, 60, smooth((s - (g.tubFront - 80)) / 80));
+    const shoulder = g.suv ? 125 : lerp(125, 60, smooth((s - (g.tubFront - 80)) / 80));
     return {
       z0,
       z1,
@@ -184,7 +186,7 @@ export function makeUteShape(g: UteGeometry): UteShape {
     return sF + 800;
   };
 
-  // Lower body: front and cab, tub, tailgate. The cab's rear cap is the tub's headboard.
+  // Lower body. A ute's is the front and cab, tub and tailgate; the cab's rear cap is the tub's headboard.
   const fine: [number, number, number][] = [
     [sF, sF + 260, 10],
     ...arches.map((cx): [number, number, number] => [cx - archR - 20, cx + archR + 20, 12]),
@@ -192,14 +194,21 @@ export function makeUteShape(g: UteGeometry): UteShape {
     [g.tubFront - 100, g.tubFront, 15],
     [sR - 140, sR, 10],
   ];
-  const closed = (xs: number[]): Station[] => xs.map((x) => ({ x, zones: [closedRing(section(x))] }));
-  const front = loft(closed(stationsBetween(sF, g.tubFront, 45, fine)), { capStart: true, capEnd: true });
-  const tub = loft(
-    stationsBetween(g.tubFront, g.tubRear, 45, fine).map((x) => ({ x, zones: tubZones(section(x), g.tubInnerW / 2, g.tubFloor - 40) })),
-  );
-  const tail = loft(closed(stationsBetween(g.tubRear, sR, 20, fine)), { capStart: true, capEnd: true });
+  const closed = (x0: number, x1: number, step: number) =>
+    loft(
+      stationsBetween(x0, x1, step, fine).map((x): Station => ({ x, zones: [closedRing(section(x))] })),
+      { capStart: true, capEnd: true },
+    );
+  // An SUV's lower body is closed from the nose to the tailgate, with its cargo floor inside.
+  const body = g.suv
+    ? [closed(sF, sR, 45)]
+    : [
+        closed(sF, g.tubFront, 45),
+        loft(stationsBetween(g.tubFront, g.tubRear, 45, fine).map((x) => ({ x, zones: tubZones(section(x), g.tubInnerW / 2, g.tubFloor - 40) }))),
+        closed(g.tubRear, sR, 20),
+      ];
 
-  return { section, topZ, sideY, frontX, body: [front, tub, tail], greenhouse: greenhouse(g), archR };
+  return { section, topZ, sideY, frontX, body, greenhouse: greenhouse(g), archR };
 }
 
 /** The cab's outline: where the glasshouse starts and ends, its top line along the car and its width with height. */
@@ -254,7 +263,7 @@ export function roofPanel(g: UteGeometry, s0: number, s1: number, w: number, r: 
   );
 }
 
-/** Cab glasshouse: one rounded surface split into roof (paint), pillars and frames (trim) and glass. */
+/** Cab (or SUV) glasshouse: one rounded surface split into roof (paint), pillars and frames (trim) and glass. */
 function greenhouse(g: UteGeometry): THREE.BufferGeometry {
   const { sStart, sEnd, halfAt, topShape } = cabTop(g);
 
@@ -274,14 +283,22 @@ function greenhouse(g: UteGeometry): THREE.BufferGeometry {
   const half: Tag[] = [...Array(6).fill('side'), ...Array(6).fill('corner'), ...Array(4).fill('top')];
   tags.push(...half, ...half.slice(0, -1).reverse());
 
-  const xs = stationsBetween(sStart, sEnd, 30, [
-    [sStart, g.sWindscreenTop + 80, 12],
-    [g.bPillar - 60, g.bPillar + 60, 10],
-    [g.sRoofBack - 160, sEnd, 12],
-  ]);
+  const pillars: [number, number, number][] = [g.bPillar, ...(g.cPillar === null ? [] : [g.cPillar])].map((x) => [x - 60, x + 80, 10]);
+  const xs = stationsBetween(sStart, sEnd, 30, [[sStart, g.sWindscreenTop + 80, 12], ...pillars, [g.sRoofBack - 160, sEnd, 12]]);
   const rings = xs.map(ringAt);
-  const frontWindow = (s: number) => s > sStart + 60 && s < g.bPillar - 45;
-  const rearWindow = (s: number) => s > g.bPillar + 45 && s < g.sRoofBack - 110;
+  // Front and rear door windows, and an SUV's quarter window behind the rear doors.
+  const windows: [number, number][] =
+    g.cPillar === null
+      ? [
+          [sStart + 60, g.bPillar - 45],
+          [g.bPillar + 45, g.sRoofBack - 110],
+        ]
+      : [
+          [sStart + 60, g.bPillar - 45],
+          [g.bPillar + 45, g.cPillar - 40],
+          [g.cPillar + 70, g.sRoofBack - 120],
+        ];
+  const sideWindow = (s: number) => windows.some(([a, b]) => s > a && s < b);
 
   return loft(
     rings.map((r, j) => ({ x: xs[j], zones: [r.ring] })),
@@ -293,7 +310,7 @@ function greenhouse(g: UteGeometry): THREE.BufferGeometry {
         const tag: Tag = ta === 'corner' || tb === 'corner' ? 'corner' : ta === 'top' || tb === 'top' ? 'top' : 'side';
         const z = (rings[j].ring[i][1] + rings[j].ring[i + 1][1]) / 2;
         const sideGlass = () =>
-          (frontWindow(s) || rearWindow(s)) && z > g.zBelt + 28 && z < rings[j].sideTop - 25 ? GLASS : TRIM;
+          sideWindow(s) && z > g.zBelt + 28 && z < rings[j].sideTop - 25 ? GLASS : TRIM;
         if (tag === 'side') return sideGlass();
         if (s < g.sWindscreenTop - 50) return tag === 'top' && z > g.zBelt + 30 ? GLASS : TRIM;
         if (s < g.sWindscreenTop + 10) return TRIM;

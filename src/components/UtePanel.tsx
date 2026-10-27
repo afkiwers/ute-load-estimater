@@ -15,13 +15,22 @@ const SOURCE_TEXT: Record<UteBaselineSource, string> = {
   spec: 'Baseline: estimated from the published kerb weight',
 };
 
-function TopView() {
+function TopView({ suv }: { suv: boolean }) {
   return (
     <svg width="96" height="150" viewBox="0 0 96 150" aria-hidden="true">
       <rect x="14" y="4" width="68" height="142" rx="14" fill="#f1f2f4" stroke="#9aa2ad" strokeWidth="1.5" />
       <path d="M20 40 Q48 30 76 40 L74 60 Q48 54 22 60 Z" fill="#c9d2dc" stroke="#9aa2ad" />
-      <rect x="22" y="62" width="52" height="34" rx="4" fill="#e6e9ec" stroke="#b5bcc5" />
-      <rect x="22" y="100" width="52" height="40" rx="2" fill="#d4d8dc" stroke="#b5bcc5" />
+      {suv ? (
+        <>
+          <rect x="22" y="62" width="52" height="66" rx="4" fill="#e6e9ec" stroke="#b5bcc5" />
+          <path d="M24 130 Q48 135 72 130 L72 140 Q48 144 24 140 Z" fill="#c9d2dc" stroke="#9aa2ad" />
+        </>
+      ) : (
+        <>
+          <rect x="22" y="62" width="52" height="34" rx="4" fill="#e6e9ec" stroke="#b5bcc5" />
+          <rect x="22" y="100" width="52" height="40" rx="2" fill="#d4d8dc" stroke="#b5bcc5" />
+        </>
+      )}
       <rect x="4" y="18" width="12" height="26" rx="3" fill="#2b2e33" />
       <rect x="80" y="18" width="12" height="26" rx="3" fill="#2b2e33" />
       <rect x="4" y="104" width="12" height="26" rx="3" fill="#2b2e33" />
@@ -39,6 +48,7 @@ export function UtePanel() {
   const base = result.ute.baseline;
   const issues = base.issues;
   const tyreKg = loadIndexKg(setup.ute.tyre.loadIndex);
+  const suv = setup.ute.bodyStyle === 'suv';
 
   const reading = (key: keyof UteReadings, label: string) => (
     <div className="wb-cell" style={{ gridArea: key }}>
@@ -71,7 +81,7 @@ export function UtePanel() {
         </label>
       </Section>
 
-      <Section title="Weighbridge readings" extra="ute unhitched">
+      <Section title="Weighbridge readings" extra={suv ? 'unhitched' : 'ute unhitched'}>
         <p className="section-note">
           Enter what you have: individual wheels, axles and/or the total. Missing values are derived (shown in grey) and every
           redundant reading is cross-checked. Readings already include whatever was on the ute when weighed.
@@ -82,7 +92,7 @@ export function UtePanel() {
           {reading('front', 'Front axle')}
           {reading('fr', 'Front right')}
           <div className="body">
-            <TopView />
+            <TopView suv={suv} />
           </div>
           {reading('rl', 'Rear left')}
           {reading('rear', 'Rear axle')}
@@ -152,6 +162,7 @@ export function UtePanel() {
       <Section title="Dimensions" open={false}>
         <p className="section-note">
           Wheelbase and track set how loads split between the axles and wheels. The other sizes shape the 3D model and where items sit.
+          {suv && ' The cargo floor is the space behind the rear seats, drawn as a five seater.'}
         </p>
         <div className="fields">
           <NumField path="ute.wheelbase" label="Wheelbase" unit="mm" nullable={false} min={1000} />
@@ -162,10 +173,20 @@ export function UtePanel() {
           <NumField path="ute.overallWidth" label="Overall width" unit="mm" nullable={false} min={1000} />
           <NumField path="ute.overallHeight" label="Overall height" unit="mm" nullable={false} min={1000} />
           <NumField path="ute.kerbFrontPct" label="Kerb weight on front" unit="%" nullable={false} min={1} hint="Only used before you weigh." />
-          <NumField path="ute.tub.length" label="Tub length (inside)" unit="mm" nullable={false} min={300} />
-          <NumField path="ute.tub.width" label="Tub width (inside)" unit="mm" nullable={false} min={300} />
-          <NumField path="ute.tub.depth" label="Tub depth" unit="mm" nullable={false} min={100} />
-          <NumField path="ute.tub.floorHeight" label="Tub floor height" unit="mm" nullable={false} min={300} />
+          {suv ? (
+            <>
+              <NumField path="ute.tub.length" label="Cargo floor length" unit="mm" nullable={false} min={300} />
+              <NumField path="ute.tub.width" label="Cargo floor width" unit="mm" nullable={false} min={300} />
+              <NumField path="ute.tub.floorHeight" label="Cargo floor height" unit="mm" nullable={false} min={300} />
+            </>
+          ) : (
+            <>
+              <NumField path="ute.tub.length" label="Tub length (inside)" unit="mm" nullable={false} min={300} />
+              <NumField path="ute.tub.width" label="Tub width (inside)" unit="mm" nullable={false} min={300} />
+              <NumField path="ute.tub.depth" label="Tub depth" unit="mm" nullable={false} min={100} />
+              <NumField path="ute.tub.floorHeight" label="Tub floor height" unit="mm" nullable={false} min={300} />
+            </>
+          )}
         </div>
       </Section>
 

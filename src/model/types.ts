@@ -73,10 +73,14 @@ export interface TyreSpec {
   loadKg: number | null;
 }
 
+/** A dual-cab ute with a tub, or a five-seat SUV (wagon). Only changes the 3D view. */
+export type BodyStyle = 'ute' | 'suv';
+
 export interface UteSpec {
   /** The model picked from the list (see vehicles.ts); its figures may have been edited since. */
   model: string;
   name: string;
+  bodyStyle: BodyStyle;
   wheelbase: number;
   trackFront: number;
   trackRear: number;
@@ -85,6 +89,7 @@ export interface UteSpec {
   overallHeight: number;
   /** Front axle centre to the front of the bumper. */
   frontOverhang: number;
+  /** The tub, or for an SUV the cargo floor behind the rear seats (its depth is not used). */
   tub: {
     length: number;
     width: number;

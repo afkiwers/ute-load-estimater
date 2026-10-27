@@ -6,7 +6,7 @@
 
 # Ute Load Estimator
 
-Plan and check the loading of a ute and the caravan it tows. Enter your weighbridge readings and the manufacturer limits, drag accessories and gear onto a 3D model, and see the axle, wheel, tow ball and combination loads update against every limit.
+Plan and check the loading of a ute (or SUV) and the caravan it tows. Enter your weighbridge readings and the manufacturer limits, drag accessories and gear onto a 3D model, and see the axle, wheel, tow ball and combination loads update against every limit.
 
 **[Open it in your browser](https://afkiwers.github.io/ute-load-estimater/)**, or **[download ute-load-estimator.html](https://github.com/afkiwers/ute-load-estimater/releases/latest/download/ute-load-estimator.html)** to use it offline ([release notes](https://github.com/afkiwers/ute-load-estimater/releases/latest))
 
@@ -52,15 +52,21 @@ This is a static estimate to plan with. Always confirm on a weighbridge before y
 
 ## Vehicle models
 
-Pick your ute under **Vehicle** at the top of the Ute tab. The default is the **GWM Cannon Alpha Vanta 3.0L diesel** (GVM 3,495 kg, GCM 6,555 kg, max front axle 1,680 kg, max rear axle 2,026 kg, kerb 2,550 kg, tare 2,458 kg, payload 945 kg, braked towing 3,500 kg, unbraked 750 kg, max tow ball download 350 kg, wheelbase 3,350 mm). The list has:
+Pick your vehicle under **Vehicle** at the top of the Ute tab. The default is the **GWM Cannon Alpha Vanta 3.0L diesel** (GVM 3,495 kg, GCM 6,555 kg, max front axle 1,680 kg, max rear axle 2,026 kg, kerb 2,550 kg, tare 2,458 kg, payload 945 kg, braked towing 3,500 kg, unbraked 750 kg, max tow ball download 350 kg, wheelbase 3,350 mm). The list has:
 
 - **GWM Cannon Alpha:** Vanta and Lux 3.0L diesel, Ultra and Lux PHEV
 - **GWM Cannon:** XSR, Vanta, Ultra and Lux 2.4L diesel, Lux 2.4L diesel dual cab chassis, Ultra and Lux PHEV, Premium 2.0L diesel
-- **Earlier models:** Cannon Alpha Ultra and Lux 2.4L diesel (2024–2026) and Ultra Hybrid (2024–2025), Cannon Vanta 2.0L diesel (2023–2024), Cannon-X and Cannon-L 2.0L diesel (2021–2024)
+- **Earlier GWM models:** Cannon Alpha Ultra and Lux 2.4L diesel (2024–2026) and Ultra Hybrid (2024–2025), Cannon Vanta 2.0L diesel (2023–2024), Cannon-X and Cannon-L 2.0L diesel (2021–2024)
+- **Isuzu D-MAX** crew cab ute: SX 2.2L and 3.0L diesel and LS-U 3.0L diesel 4x2; SX and X-RIDER 2.2L and 3.0L diesel, LS-U, LS-U+, X-TERRAIN and BLADE 3.0L diesel 4x4
+- **Isuzu MU-X** (SUV): LS-M 2.2L diesel 4x2; LS-M, LS-U and LS-T 2.2L and 3.0L diesel and X-TERRAIN 3.0L diesel 4x4
 
-The current range uses the figures in GWM Australia's brochures (Cannon Alpha, 14 October 2026; Cannon, 16 October 2026): GVM, GCM, axle limits, kerb and tare weights, payload, towing, tyres and dimensions, and for the Cannon also the tub size and how the kerb weight splits between the axles. Earlier models are no longer in a brochure; their weights and towing ratings come from Australian spec listings (CarExpert, carsales, Drive, CarsGuide, 4X4 Australia), and their axle limits, tare and tub sizes are typical values from the closest current model.
+The current GWM range uses the figures in GWM Australia's brochures (Cannon Alpha, 14 October 2026; Cannon, 16 October 2026): GVM, GCM, axle limits, kerb and tare weights, payload, towing, tyres and dimensions, and for the Cannon also the tub size and how the kerb weight splits between the axles. Earlier GWM models are no longer in a brochure; their weights and towing ratings come from Australian spec listings (CarExpert, carsales, Drive, CarsGuide, 4X4 Australia), and their axle limits, tare and tub sizes are typical values from the closest current model.
 
-Values that are not published, or where sources disagree, are marked **placeholder** in the app until you change them or click the chip to mark them verified: always the track, front overhang and tub floor height, and depending on the model the tub size, kerb weight split, tyre load index and, for earlier models, the axle limits and other figures. Check them against your vehicle's placard, owner's manual and tow bar plate. Switching model keeps your readings, items and paint. The single cab chassis Premium is not in the list because the 3D model is a dual cab. The caravan starts with example values for a 6 m tandem van.
+The Isuzus use Isuzu UTE Australia's 25.5MY D-MAX and MU-X brochures: GVM, GCM, axle ratings, kerb weight, payload, towing, tyre sizes, dimensions and track, and for the D-MAX the tub size. Isuzu gives the kerb weight with a full tank, so the tare (10 L of fuel) is worked out as the kerb weight less the rest of the diesel (55 kg for the D-MAX's 76 L tank, 58 kg for the MU-X's 80 L). The D-MAX cab chassis are not in the list because their published kerb weight is without the tray.
+
+The MU-X is drawn as a generic five-seat SUV: two rows of seats, with the third row folded into the cargo floor behind them. Cargo area items in the palette go on that floor; use the x-ray view to drag them around inside.
+
+Values that are not published, or where sources disagree, are marked **placeholder** in the app until you change them or click the chip to mark them verified: always the tub (or cargo) floor height; for GWM models the track and front overhang; for Isuzus the tare, kerb weight split and tyre load index, and on a 4x2 the front axle rating (the brochures give it with the 4x4's front axle); and depending on the model the tub or cargo floor size, kerb weight split, tyre load index and, for earlier GWM models, the axle limits and other figures. Check them against your vehicle's placard, owner's manual and tow bar plate. Switching model keeps your readings, items and paint. Single and space cab models are not in the list because the 3D model is a dual cab. The caravan starts with example values for a 6 m tandem van.
 
 ## Develop
 
@@ -81,7 +87,7 @@ Code map:
 
 - `src/model/` load model (`calc.ts`), geometry, tyre tables, presets, trailer types (`trailers.ts`); no UI code. The towed vehicle is called `caravan` in the code and in saved setups whatever its type; `caravan.kind` says what it is.
 - `src/state/` setups store (saved in the browser), UI state
-- `src/three/` 3D scene, vehicle models, drag and drop
+- `src/three/` 3D scene, vehicle models (ute and SUV bodies), drag and drop
 - `src/components/` panels, inspector, report
 
 ## License

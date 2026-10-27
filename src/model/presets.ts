@@ -121,7 +121,7 @@ export const ITEM_TEMPLATES: ItemTemplate[] = [
   t('recovery', 'Tub', 'Recovery gear', 15, [450, 300, 250], 'tub', '#d97a1e'),
   t('camping', 'Tub', 'Camping gear', 40, [800, 600, 400], 'tub', '#5d7a8c'),
   t('spare2', 'Tub', 'Second spare wheel', 32, [790, 790, 265], 'tub', '#222', { shape: 'cylinder' }),
-  t('lrTank', 'Tub', 'Long-range fuel tank (full)', 85, [900, 700, 250], 'underTub', '#555d66', { note: 'Mounted under the tub.' }),
+  t('lrTank', 'Tub', 'Long-range fuel tank (full)', 85, [900, 700, 250], 'underTub', '#555d66', { note: 'Mounted under the tub or cargo floor.' }),
   t('towbar', 'Tow bar', 'Tow bar + tongue', 32, [900, 1100, 180], 'hitch', '#1d1f22'),
   t('bikeRack', 'Tow bar', 'Hitch bike rack + 2 bikes', 45, [600, 1200, 900], 'towbar', '#5b8c3a'),
   ...[

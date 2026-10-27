@@ -12,6 +12,7 @@ const DRAW_OR_NAME_ONLY = [
   'name',
   'ute.model',
   'ute.name',
+  'ute.bodyStyle',
   'ute.overallLength',
   'ute.overallWidth',
   'ute.overallHeight',

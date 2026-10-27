@@ -54,4 +54,31 @@ describe('vehicle models', () => {
     expect(s.ute.limits).toMatchObject({ gvm: 3150, brakedTow: 3000, kerb: 2100, payload: 1050 });
     expect(s.placeholders).toEqual(expect.arrayContaining(['ute.limits.frontAxle', 'ute.limits.rearAxle', 'ute.limits.gcm']));
   });
+
+  it('has the Isuzu D-MAX from its brochure, with the tare worked out from the full-tank kerb weight', () => {
+    const s = newSetup();
+    applyVehicle(s, 'dmax-lsu-30d');
+    expect(s.ute).toMatchObject({ name: 'Isuzu D-MAX LS-U 3.0L diesel 4x4', bodyStyle: 'ute', wheelbase: 3125, trackFront: 1570, overallLength: 5285 });
+    expect(s.ute.tub).toMatchObject({ length: 1570, width: 1530, depth: 490 });
+    expect(s.ute.tyre).toMatchObject({ size: '265/60R18' });
+    // 76 L tank: 66 L of diesel above the tare's 10 L is 55 kg.
+    expect(s.ute.limits).toEqual({ gvm: 3100, gcm: 6000, frontAxle: 1450, rearAxle: 1910, kerb: 2105, tare: 2050, payload: 995, brakedTow: 3500, unbrakedTow: 750, towBallMax: 350 });
+    // Isuzu publishes the track, front overhang and tub size, not the tare, kerb split or load index.
+    expect(s.placeholders).not.toEqual(expect.arrayContaining(['ute.trackFront']));
+    expect(s.placeholders).not.toContain('ute.frontOverhang');
+    expect(s.placeholders).not.toContain('ute.tub.length');
+    expect(s.placeholders).toEqual(expect.arrayContaining(['ute.limits.tare', 'ute.kerbFrontPct', 'ute.tyre.loadIndex', 'ute.tub.floorHeight']));
+  });
+
+  it('draws the Isuzu MU-X as an SUV', () => {
+    const s = newSetup();
+    applyVehicle(s, 'mux-lst-30d');
+    expect(s.ute).toMatchObject({ name: 'Isuzu MU-X LS-T 3.0L diesel 4x4', bodyStyle: 'suv', wheelbase: 2855, overallLength: 4860, sunroof: false });
+    expect(s.ute.tyre).toMatchObject({ size: '265/50R20' });
+    expect(s.ute.limits).toMatchObject({ gvm: 2800, gcm: 5900, frontAxle: 1450, rearAxle: 1650, kerb: 2185, tare: 2127, payload: 615 });
+    expect(s.placeholders).toEqual(expect.arrayContaining(['ute.tub.length', 'ute.tub.width']));
+    applyVehicle(s, 'mux-lsm-22d-4x2');
+    expect(s.ute.limits).toMatchObject({ gvm: 2700, kerb: 1995, payload: 705 });
+    expect(s.placeholders).toContain('ute.limits.frontAxle');
+  });
 });
