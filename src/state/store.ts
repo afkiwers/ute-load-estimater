@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Setup } from '../model/types';
 import { newSetup, uid, type ItemTemplate } from '../model/presets';
+import { normalizeSetup } from '../model/migrate';
 
 export const STORAGE_KEY = 'ute-load-estimator';
 const HISTORY_LIMIT = 80;
@@ -57,24 +58,6 @@ function setPathMut(obj: Record<string, unknown>, path: string, value: unknown) 
   let o = obj;
   for (const k of keys.slice(0, -1)) o = o[k] as Record<string, unknown>;
   o[keys[keys.length - 1]] = value;
-}
-
-/** Fills in fields added in later versions so old saves keep loading. */
-export function normalizeSetup(raw: Partial<Setup>): Setup {
-  const base = newSetup(raw.name ?? 'Imported setup');
-  const merge = (def: unknown, val: unknown): unknown => {
-    if (val === undefined) return def;
-    if (def && typeof def === 'object' && !Array.isArray(def) && val && typeof val === 'object' && !Array.isArray(val)) {
-      const out: Record<string, unknown> = { ...(val as Record<string, unknown>) };
-      for (const [k, v] of Object.entries(def as Record<string, unknown>)) out[k] = merge(v, (val as Record<string, unknown>)[k]);
-      return out;
-    }
-    return val;
-  };
-  const merged = merge(base, raw) as Setup;
-  merged.items = (raw.items ?? []).map((it) => ({ ...it, id: it.id ?? uid() }));
-  merged.placeholders = raw.placeholders ?? [];
-  return merged;
 }
 
 function firstSetup() {

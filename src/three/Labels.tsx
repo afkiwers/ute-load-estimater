@@ -18,14 +18,14 @@ function Tag({ host, p, offset, status, children }: { host: Host; p: Vec3; offse
 const statusOf = (checks: Check[], id: string) => checks.find((c) => c.id === id)?.status ?? 'unset';
 
 /** A dimension line on the ground with end ticks and a caption. */
-function Dimension({ host, offset, x0, x1, y, label }: { host: Host; offset: number; x0: number; x1: number; y: number; label: string }) {
+function Dimension({ host, offset, x0, x1, y, label, labelX }: { host: Host; offset: number; x0: number; x1: number; y: number; label: string; labelX?: number }) {
   const color = '#8a929c';
   return (
     <group>
       <Block host={host} offset={offset} b={{ x0, x1, y0: y - 6, y1: y + 6, z0: 0, z1: 4 }} color={color} shadow={false} />
       <Block host={host} offset={offset} b={{ x0: x0 - 6, x1: x0 + 6, y0: y - 120, y1: y + 120, z0: 0, z1: 4 }} color={color} shadow={false} />
       <Block host={host} offset={offset} b={{ x0: x1 - 6, x1: x1 + 6, y0: y - 120, y1: y + 120, z0: 0, z1: 4 }} color={color} shadow={false} />
-      <Html position={toWorld(host, { x: (x0 + x1) / 2, y, z: 10 }, offset)} center portal={labelLayer as RefObject<HTMLElement>} style={{ pointerEvents: 'none' }} zIndexRange={[10, 0]}>
+      <Html position={toWorld(host, { x: labelX ?? (x0 + x1) / 2, y, z: 10 }, offset)} center portal={labelLayer as RefObject<HTMLElement>} style={{ pointerEvents: 'none' }} zIndexRange={[10, 0]}>
         <div className="dim">{label}</div>
       </Html>
     </group>
@@ -84,7 +84,18 @@ function CaravanLabels({ setup, result, offset }: { setup: Setup; result: Result
         Caravan <b>{num(cr.mass)}</b>
         {cv.limits.atm ? ` / ATM ${num(cv.limits.atm)}` : ''} kg
       </Tag>
-      <Dimension host="caravan" offset={offset} x0={0} x1={c.a} y={left} label={`Coupling → axles ${mm(c.a)}`} />
+      {c.axles.map((x, i) => (
+        <Dimension
+          key={i}
+          host="caravan"
+          offset={offset}
+          x0={0}
+          x1={x}
+          y={left - i * 480}
+          labelX={Math.max(x / 2, x - 1100)}
+          label={`Tow ball → ${c.axles.length > 1 ? `axle ${i + 1}` : 'axle'} ${mm(x)}`}
+        />
+      ))}
     </group>
   );
 }

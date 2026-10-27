@@ -24,16 +24,16 @@ Until you have weighed, the published kerb weight is used with an assumed front/
 
 Readings already include what was on the vehicle when you weighed it. Tick **Was on the vehicle when weighed** for those items (or use **Mark ticked items as weighed** right after weighing): they then only change the result when you move them or untick them, so nothing is counted twice.
 
-**Towing.** Caravan readings (weighbridge total, tow ball scale, optional axle and side loads), plate (ATM, GTM, tare, tare ball), tyres and geometry. Items inside or on the caravan move the ball weight. Checks: towing capacity, tow ball download, tow bar ratings, GCM, ATM, GTM, caravan tyres, ball weight share (8 to 12% guideline) and front axle unloading. An optional weight distribution hitch restores a chosen share of the front axle load.
+**Towing.** Caravan readings (weighbridge total, tow ball scale, optional axle and side loads), plate (ATM, GTM, tare, tare ball), tyres and geometry. Choose a single or tandem axle and enter each axle's distance from the tow ball centre. Items inside or on the caravan move the ball weight. Checks: towing capacity, tow ball download, tow bar ratings, GCM, ATM, GTM, caravan tyres, ball weight share (8 to 12% guideline) and front axle unloading. An optional weight distribution hitch restores a chosen share of the front axle load.
 
 **Also:** several named setups (duplicate one to compare loading plans), undo/redo, x-ray view to place items inside the cab or caravan, paint colours, and a printable report (save as PDF from the print dialog).
 
 ## How the numbers are worked out
 
-Distances are in mm, masses in kg. On the ute, `x` is measured rearward from the front axle centre; on the caravan, from the coupling. `y` is to the right of the centreline (driver side), `z` is height.
+Distances are in mm, masses in kg. On the ute, `x` is measured rearward from the front axle centre; on the caravan, from the tow ball (coupling) centre. `y` is to the right of the centreline (driver side), `z` is height.
 
 - **Ute.** A beam on two axles: a mass `m` at `x` puts `m·(L−x)/L` on the front and `m·x/L` on the rear axle (wheelbase `L`). Ahead of the front axle (a winch) it unloads the rear; behind the rear axle it unloads the front. Each axle shares its load between its wheels by lever over the track. A four-wheel vehicle is statically indeterminate side to side, so roll stiffness is ignored, as is usual for load planning.
-- **Caravan.** A beam on the tow ball and the axle group (tandem axles share equally): `ball = m·(a−x)/a` with `a` the coupling-to-axle distance. Weight behind the axles lifts the ball.
+- **Caravan.** A beam on the tow ball and the axle group: `ball = m·(a−x)/a`. For a single axle `a` is its distance from the tow ball; tandem axles are taken to share the load equally, so `a` is the average of their two distances. Weight behind the axles lifts the ball.
 - **Hitching.** The ball weight `B` sits `d` behind the rear axle: the rear axle gains `B·(L+d)/L` and the front axle loses `B·d/L`.
 - **WDH.** The spring bars apply a couple `M` at the hitch. It moves `M/L` from the rear to the front axle and `M/a` onto the caravan axles. `M` is chosen so the front axle regains the selected share of the load hitching took off it.
 - **Headroom.** "Room for N kg more here" is found by adding a 1 kg probe at the position and dividing each limit's spare capacity by how much the probe moved it.

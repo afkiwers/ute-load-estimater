@@ -10,6 +10,8 @@ import {
 import { ITEM_TEMPLATES, itemFromTemplate, newSetup, defaultSettings, emptyCaravanReadings, emptyUteReadings } from './presets';
 import type { LoadItem, Setup } from './types';
 import { loadIndexKg, rimDiameter, tyreDiameter } from './tyres';
+import { axleCentre } from './geometry';
+import { normalizeSetup } from './migrate';
 
 const settings = defaultSettings();
 
@@ -81,12 +83,12 @@ describe('caravanShare', () => {
   const cv = newSetup().caravan;
   it('splits between ball and axle by lever', () => {
     expect(caravanShare(100, { x: 0, y: 0, z: 0 }, cv).ball).toBeCloseTo(100);
-    const over = caravanShare(100, { x: cv.couplingToAxle, y: 0, z: 0 }, cv);
+    const over = caravanShare(100, { x: axleCentre(cv), y: 0, z: 0 }, cv);
     expect(over.ball).toBeCloseTo(0);
     expect(over.left + over.right).toBeCloseTo(100);
   });
   it('lightens the ball when loaded behind the axle', () => {
-    const behind = caravanShare(50, { x: cv.couplingToAxle + 2000, y: 0, z: 0 }, cv);
+    const behind = caravanShare(50, { x: axleCentre(cv) + 2000, y: 0, z: 0 }, cv);
     expect(behind.ball).toBeLessThan(0);
     expect(behind.ball + behind.left + behind.right).toBeCloseTo(50);
   });
@@ -234,7 +236,7 @@ describe('compute', () => {
     s.caravanReadings = { ...emptyCaravanReadings(), total: 2600, ball: 260 };
     s.items = [item({ host: 'caravan', mass: 38, pos: { x: 900, y: 0, z: 600 } })];
     const r = compute(s);
-    const a = s.caravan.couplingToAxle;
+    const a = axleCentre(s.caravan);
     expect(r.hitch!.ball).toBeCloseTo(260 + 38 * (1 - 900 / a));
   });
 
@@ -297,5 +299,62 @@ describe('itemFromTemplate', () => {
     const passenger = itemFromTemplate(ITEM_TEMPLATES.find((t) => t.id === 'passenger')!, s);
     expect(passenger.pos.y).toBeLessThan(0);
     expect(Math.abs(passenger.pos.x - s.items[0].pos.x)).toBeLessThan(1);
+  });
+});
+
+describe('caravan axles', () => {
+  it('treats a tandem as one axle at the average distance from the ball', () => {
+    const cv = { ...newSetup().caravan, axles: [4600, 5600] };
+    expect(axleCentre(cv)).toBe(5100);
+    const atFrontAxle = caravanShare(100, { x: 4600, y: 0, z: 0 }, cv);
+    expect(atFrontAxle.ball).toBeCloseTo(100 * (1 - 4600 / 5100));
+  });
+
+  it('uses the single axle position directly', () => {
+    const cv = { ...newSetup().caravan, axles: [4200] };
+    const over = caravanShare(100, { x: 4200, y: 0, z: 0 }, cv);
+    expect(over.ball).toBeCloseTo(0);
+  });
+
+  it('moves the ball weight when an axle is moved', () => {
+    const s = bareSetup();
+    s.towing = true;
+    s.caravanReadings = { ...emptyCaravanReadings(), total: 2600, ball: 260 };
+    s.items = [item({ host: 'caravan', mass: 100, pos: { x: 3000, y: 0, z: 800 } })];
+    s.caravan.axles = [4800, 5800];
+    const before = compute(s).hitch!.ball;
+    s.caravan.axles = [5300, 6300];
+    expect(compute(s).hitch!.ball).toBeGreaterThan(before);
+  });
+
+  it('counts the tyres per side from the number of axles', () => {
+    const s = bareSetup();
+    s.towing = true;
+    s.caravanReadings = { ...emptyCaravanReadings(), total: 2600, ball: 260 };
+    s.caravan.axles = [5300];
+    const single = compute(s).checks.find((c) => c.id === 'cvTyre_left')!.value;
+    s.caravan.axles = [4800, 5800];
+    expect(compute(s).checks.find((c) => c.id === 'cvTyre_left')!.value).toBeCloseTo(single / 2);
+  });
+
+  it('warns when tandem axles are closer than a tyre diameter', () => {
+    const s = bareSetup();
+    s.towing = true;
+    s.caravan.axles = [5000, 5300];
+    expect(compute(s).issues.some((i) => i.fields?.includes('caravan.axles.1'))).toBe(true);
+  });
+
+  it('upgrades setups saved with one axle-group distance', () => {
+    const old = structuredClone(newSetup()) as unknown as Record<string, any>;
+    delete old.caravan.axles;
+    Object.assign(old.caravan, { couplingToAxle: 5200, axleCount: 2, axleSpacing: 900 });
+    old.placeholders = ['caravan.couplingToAxle', 'caravan.axleSpacing', 'ute.limits.tare'];
+    const s = normalizeSetup(old);
+    expect(s.caravan.axles).toEqual([4750, 5650]);
+    expect('couplingToAxle' in s.caravan).toBe(false);
+    expect(s.placeholders).toEqual(['ute.limits.tare', 'caravan.axles.0', 'caravan.axles.1']);
+
+    Object.assign(old.caravan, { axleCount: 1 });
+    expect(normalizeSetup(old).caravan.axles).toEqual([5200]);
   });
 });

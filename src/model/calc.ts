@@ -17,8 +17,9 @@ import type {
   UteSpec,
   Vec3,
 } from './types';
-import { kg, num, pct, signedKg } from './format';
-import { loadIndexKg } from './tyres';
+import { kg, mm, num, pct, signedKg } from './format';
+import { axleCentre } from './geometry';
+import { loadIndexKg, tyreDiameter } from './tyres';
 
 export type WheelId = 'fl' | 'fr' | 'rl' | 'rr';
 export type WheelLoads = Record<WheelId, number>;
@@ -181,7 +182,7 @@ export function uteShare(mass: number, p: Vec3, ute: UteSpec): WheelLoads {
 
 /** Load a point mass puts on the tow ball and on each side of the caravan axle group. */
 export function caravanShare(mass: number, p: Vec3, cv: CaravanSpec): CaravanLoads {
-  const axle = (mass * p.x) / cv.couplingToAxle;
+  const axle = (mass * p.x) / axleCentre(cv);
   const l = p.y / cv.track;
   return { ball: mass - axle, left: axle * (0.5 - l), right: axle * (0.5 + l) };
 }
@@ -586,7 +587,19 @@ export function compute(setup: Setup): Result {
     const B = loads.ball;
     const L = ute.wheelbase;
     const d = hitch.ballOffset;
-    const a = cv.couplingToAxle;
+    const a = axleCentre(cv);
+
+    if (cv.axles.length === 2) {
+      const spacing = Math.abs(cv.axles[1] - cv.axles[0]);
+      const tyre = tyreDiameter(cv.tyre.size);
+      if (tyre && spacing < tyre + 20) {
+        issues.push({
+          level: 'warn',
+          message: `The caravan axles are ${mm(spacing)} apart, less than a tyre diameter (${mm(tyre)}): the wheels would touch. Check the axle distances from the tow ball.`,
+          fields: ['caravan.axles.0', 'caravan.axles.1'],
+        });
+      }
+    }
 
     if (B < 0) {
       issues.push({
@@ -704,7 +717,7 @@ export function compute(setup: Setup): Result {
         hitchResult.wdhToCaravan > 0 ? `Includes ${kg(hitchResult.wdhToCaravan)} moved by the WDH.` : undefined),
     );
     const cvTyreKg = loadIndexKg(cv.tyre.loadIndex);
-    const n = cv.axleCount;
+    const n = cv.axles.length;
     checks.push(
       limitCheck(s, 'cvTyre_left', 'Caravan', `Caravan left tyre${n > 1 ? 's (each)' : ''}`, c.axleLeft / n, cvTyreKg),
       limitCheck(s, 'cvTyre_right', 'Caravan', `Caravan right tyre${n > 1 ? 's (each)' : ''}`, c.axleRight / n, cvTyreKg),

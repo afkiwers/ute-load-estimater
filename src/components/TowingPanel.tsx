@@ -1,6 +1,7 @@
 import type { CaravanReadings } from '../model/types';
 import type { CaravanBaselineSource } from '../model/calc';
-import { kg, pct } from '../model/format';
+import { kg, mm, pct } from '../model/format';
+import { axleCentre } from '../model/geometry';
 import { loadIndexKg } from '../model/tyres';
 import { useStore } from '../state/store';
 import { useResult, useSetup } from '../state/result';
@@ -16,10 +17,12 @@ export function TowingPanel() {
   const setup = useSetup();
   const result = useResult();
   const setPath = useStore((s) => s.setPath);
+  const update = useStore((s) => s.update);
   const cv = setup.caravan;
   const base = result.caravan?.baseline;
   const issues = base?.issues ?? [];
   const tyreKg = loadIndexKg(cv.tyre.loadIndex);
+  const tandem = cv.axles.length > 1;
 
   const reading = (key: keyof CaravanReadings, label: string, hint?: string) => (
     <NumField path={`caravanReadings.${key}`} label={label} hint={hint} derived={base?.derived[key] ?? null} flag={flagFor(issues, `caravanReadings.${key}`)} />
@@ -34,7 +37,14 @@ export function TowingPanel() {
 
       <Section title="Tow bar">
         <div className="fields">
-          <NumField path="hitch.ballOffset" label="Rear axle → ball centre" unit="mm" nullable={false} min={0} hint="Measure along the ground." />
+          <NumField
+            path="hitch.ballOffset"
+            label="Rear axle → ball centre"
+            unit="mm"
+            nullable={false}
+            min={0}
+            hint={`Measure along the ground. Front axle → ball: ${mm(setup.ute.wheelbase + setup.hitch.ballOffset)}.`}
+          />
           <NumField path="hitch.ballHeight" label="Ball height" unit="mm" nullable={false} min={100} />
           <NumField path="hitch.towbarRating" label="Tow bar rating" hint="From the tow bar plate, if lower." />
           <NumField path="hitch.towbarBallRating" label="Tow bar ball rating" />
@@ -101,6 +111,51 @@ export function TowingPanel() {
             </div>
           </Section>
 
+          <Section title="Axles" extra={tandem ? 'Tandem' : 'Single'}>
+            <p className="section-note">Measure along the ground from the tow ball centre to the centre of each wheel hub.</p>
+            <div className="fields">
+              <label className="field">
+                <span className="field-label">Axles</span>
+                <span className="field-input">
+                  <select
+                    value={cv.axles.length}
+                    aria-label="Number of axles"
+                    onChange={(e) => {
+                      const count = Number(e.target.value);
+                      // Keep the group centre where it was, so switching alone doesn't move the ball weight.
+                      update((s) => {
+                        const centre = Math.round(axleCentre(s.caravan));
+                        s.caravan.axles = count === 2 ? [centre - 500, centre + 500] : [centre];
+                        if (count === 1) s.placeholders = s.placeholders.filter((p) => p !== 'caravan.axles.1');
+                      });
+                    }}
+                  >
+                    <option value={1}>Single</option>
+                    <option value={2}>Tandem</option>
+                  </select>
+                </span>
+              </label>
+              <div />
+              <NumField
+                path="caravan.axles.0"
+                label={tandem ? 'Tow ball → axle 1 (front)' : 'Tow ball → axle'}
+                unit="mm"
+                nullable={false}
+                min={300}
+                flag={flagFor(result.issues, 'caravan.axles.0')}
+              />
+              {tandem && (
+                <NumField path="caravan.axles.1" label="Tow ball → axle 2 (rear)" unit="mm" nullable={false} min={300} flag={flagFor(result.issues, 'caravan.axles.1')} />
+              )}
+            </div>
+            {tandem && (
+              <p className="section-note" style={{ marginTop: 8, marginBottom: 0 }}>
+                Axle spacing {mm(Math.abs(cv.axles[1] - cv.axles[0]))}. The axles share the load equally, so they act as one axle{' '}
+                {mm(axleCentre(cv))} behind the tow ball.
+              </p>
+            )}
+          </Section>
+
           <Section title="Caravan tyres">
             <div className="fields">
               <TextField path="caravan.tyre.size" label="Size" />
@@ -110,19 +165,8 @@ export function TowingPanel() {
 
           <Section title="Caravan dimensions" open={false}>
             <div className="fields">
-              <NumField path="caravan.couplingToAxle" label="Coupling → axle centre" unit="mm" nullable={false} min={500} hint="To the middle of a tandem group." />
-              <label className="field">
-                <span className="field-label">Axles</span>
-                <span className="field-input">
-                  <select value={cv.axleCount} onChange={(e) => setPath('caravan.axleCount', Number(e.target.value))}>
-                    <option value={1}>Single</option>
-                    <option value={2}>Tandem</option>
-                  </select>
-                </span>
-              </label>
-              <NumField path="caravan.axleSpacing" label="Axle spacing" unit="mm" nullable={false} min={300} />
               <NumField path="caravan.track" label="Track" unit="mm" nullable={false} min={500} />
-              <NumField path="caravan.bodyStart" label="Coupling → body front" unit="mm" nullable={false} min={300} />
+              <NumField path="caravan.bodyStart" label="Tow ball → body front" unit="mm" nullable={false} min={300} />
               <NumField path="caravan.bodyLength" label="Body length" unit="mm" nullable={false} min={1000} />
               <NumField path="caravan.bodyWidth" label="Body width" unit="mm" nullable={false} min={1000} />
               <NumField path="caravan.bodyHeight" label="Body height" unit="mm" nullable={false} min={500} />

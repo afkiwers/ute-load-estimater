@@ -111,10 +111,8 @@ export interface HitchSpec {
 export interface CaravanSpec {
   name: string;
   hasBrakes: boolean;
-  /** Coupling centre to the centre of the axle group. */
-  couplingToAxle: number;
-  axleCount: 1 | 2;
-  axleSpacing: number;
+  /** Tow ball (coupling) centre to the centre of each axle, front first: one entry, or two for a tandem. */
+  axles: number[];
   track: number;
   /** Coupling centre to the front wall of the body (A-frame length). */
   bodyStart: number;

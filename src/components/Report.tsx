@@ -141,6 +141,10 @@ export function Report() {
                     <td className="r">{kg(r.caravan.axle)}</td>
                   </tr>
                   <tr>
+                    <td>Tow ball → caravan {setup.caravan.axles.length > 1 ? 'axles' : 'axle'}</td>
+                    <td className="r">{setup.caravan.axles.map((x) => num(x)).join(' / ')} mm</td>
+                  </tr>
+                  <tr>
                     <td>WDH</td>
                     <td className="r">{setup.hitch.wdh.enabled ? `${pct(setup.hitch.wdh.restorePct)} front restore` : 'none'}</td>
                   </tr>

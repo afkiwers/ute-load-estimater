@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { capacityAt } from '../model/calc';
 import { kg, mm, num } from '../model/format';
 import { uid } from '../model/presets';
+import { axleCentre } from '../model/geometry';
 import type { ItemShape, LoadItem } from '../model/types';
 import { useStore } from '../state/store';
 import { useResult, useSetup } from '../state/result';
@@ -58,13 +59,14 @@ export function Inspector() {
   const isUte = item.host === 'ute';
   const L = setup.ute.wheelbase;
   const relRear = item.pos.x - L;
+  const vanAxles = axleCentre(setup.caravan);
   const where = isUte
     ? item.pos.x < 0
       ? `${mm(-item.pos.x)} ahead of the front axle`
       : relRear > 0
         ? `${mm(relRear)} behind the rear axle`
         : `between the axles, ${mm(-relRear)} ahead of the rear axle`
-    : `${mm(Math.abs(item.pos.x - setup.caravan.couplingToAxle))} ${item.pos.x > setup.caravan.couplingToAxle ? 'behind' : 'ahead of'} the caravan axles`;
+    : `${mm(Math.abs(item.pos.x - vanAxles))} ${item.pos.x > vanAxles ? 'behind' : 'ahead of'} ${setup.caravan.axles.length > 1 ? 'the centre of the caravan axles' : 'the caravan axle'}`;
   const m = item.measured;
   const moved = m && (m.host !== item.host || Math.hypot(m.pos.x - item.pos.x, m.pos.y - item.pos.y, m.pos.z - item.pos.z) > 5);
   const ignored = item.host === 'caravan' && !setup.towing;

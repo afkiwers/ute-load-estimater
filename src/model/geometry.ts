@@ -119,6 +119,7 @@ export function uteGeometry(ute: UteSpec, hitch: HitchSpec): UteGeometry {
 }
 
 export interface CaravanGeometry {
+  /** Centre of the axle group. */
   a: number;
   bodyStart: number;
   bodyEnd: number;
@@ -132,11 +133,17 @@ export interface CaravanGeometry {
   axles: number[];
 }
 
+/**
+ * Tow ball centre to the centre of the axle group. Tandem axles are taken to
+ * share the load equally, so the group acts as one axle at their average position.
+ */
+export function axleCentre(cv: Pick<CaravanSpec, 'axles'>): number {
+  return cv.axles.reduce((sum, x) => sum + x, 0) / cv.axles.length;
+}
+
 export function caravanGeometry(cv: CaravanSpec, hitch: HitchSpec): CaravanGeometry {
-  const a = cv.couplingToAxle;
-  const axles = cv.axleCount === 2 ? [a - cv.axleSpacing / 2, a + cv.axleSpacing / 2] : [a];
   return {
-    a,
+    a: axleCentre(cv),
     bodyStart: cv.bodyStart,
     bodyEnd: cv.bodyStart + cv.bodyLength,
     floorZ: cv.floorHeight,
@@ -146,7 +153,7 @@ export function caravanGeometry(cv: CaravanSpec, hitch: HitchSpec): CaravanGeome
     drawbarZ: hitch.ballHeight + 40,
     wheelR: (tyreDiameter(cv.tyre.size) ?? 760) / 2,
     tyreW: tyreWidth(cv.tyre.size) ?? 235,
-    axles,
+    axles: [...cv.axles],
   };
 }
 
@@ -271,7 +278,7 @@ export function anchorPlacement(anchor: Anchor, size: ItemSize, setup: Setup, oc
     case 'cvFloorRear':
       return van({ x: c.bodyEnd - size.l / 2 - 100, y: 0, z: c.floorZ + size.h / 2 });
     case 'cvUnderFloor':
-      return van({ x: c.a - c.wheelR - size.l / 2 - 250, y: 0, z: c.floorZ - 120 - size.h / 2 });
+      return van({ x: Math.min(...c.axles) - c.wheelR - size.l / 2 - 250, y: 0, z: c.floorZ - 120 - size.h / 2 });
     case 'cvRearBumper':
       return van({ x: c.bodyEnd + size.l / 2 + 80, y: 0, z: c.floorZ + size.h / 2 - 150 });
     case 'cvRoof':
