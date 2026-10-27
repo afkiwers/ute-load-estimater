@@ -14,6 +14,8 @@ export interface Materials {
   gloss: THREE.MeshPhysicalMaterial;
   /** Gloss black that renders from both sides, for thin panels. */
   trim: THREE.MeshPhysicalMaterial;
+  /** Deep black for light housings and grille backing; barely mirrors the studio lights. */
+  housing: THREE.MeshStandardMaterial;
   plastic: THREE.MeshStandardMaterial;
   chrome: THREE.MeshStandardMaterial;
   brushed: THREE.MeshStandardMaterial;
@@ -49,6 +51,7 @@ export function useMaterials(paint: string, xray: boolean): Materials {
         new THREE.MeshPhysicalMaterial({ color: '#0a0b0d', metalness: 0.2, roughness: 0.3, clearcoat: 0.6, clearcoatRoughness: 0.15, envMapIntensity: 0.45, side: THREE.DoubleSide }),
       ) as THREE.MeshPhysicalMaterial,
       plastic: ghost(new THREE.MeshStandardMaterial({ color: '#1c1e21', roughness: 0.82, metalness: 0 })) as THREE.MeshStandardMaterial,
+      housing: ghost(new THREE.MeshStandardMaterial({ color: '#08090a', roughness: 0.45, metalness: 0.2, envMapIntensity: 0.15 })) as THREE.MeshStandardMaterial,
       chrome: ghost(new THREE.MeshStandardMaterial({ color: '#e4e7ea', metalness: 1, roughness: 0.12 })) as THREE.MeshStandardMaterial,
       brushed: ghost(new THREE.MeshStandardMaterial({ color: '#aab0b7', metalness: 0.85, roughness: 0.35 })) as THREE.MeshStandardMaterial,
       glass: new THREE.MeshPhysicalMaterial({
@@ -62,7 +65,7 @@ export function useMaterials(paint: string, xray: boolean): Materials {
         envMapIntensity: 0.3,
         specularIntensity: 0.5,
       }),
-      lens: new THREE.MeshPhysicalMaterial({ color: '#ffffff', metalness: 0, roughness: 0.02, transparent: true, opacity: xray ? 0.05 : 0.18, depthWrite: false }),
+      lens: new THREE.MeshPhysicalMaterial({ color: '#ffffff', metalness: 0, roughness: 0.02, transparent: true, opacity: xray ? 0.05 : 0.12, depthWrite: false, envMapIntensity: 0.5 }),
       led: ghost(new THREE.MeshStandardMaterial({ color: '#ffffff', emissive: '#e9f3ff', emissiveIntensity: 2.2, toneMapped: false })) as THREE.MeshStandardMaterial,
       red: ghost(new THREE.MeshStandardMaterial({ color: '#7a0008', emissive: '#ff1a1a', emissiveIntensity: 1.3, roughness: 0.3, toneMapped: false })) as THREE.MeshStandardMaterial,
       amber: ghost(new THREE.MeshStandardMaterial({ color: '#8a4a00', emissive: '#ff8a00', emissiveIntensity: 1.1, roughness: 0.3, toneMapped: false })) as THREE.MeshStandardMaterial,
@@ -119,65 +122,6 @@ export function Strut({ a, b, w, d, material, host = 'ute', offset = 0, surface 
       <boxGeometry args={[w / 1000, len, d / 1000]} />
     </mesh>
   );
-}
-
-/**
- * Flat panel drawn as a 2D outline (with optional holes) and then mapped into
- * 3D, so it can lean like cab glass. `map` turns an outline point into a host-frame point.
- */
-export function usePanel(
-  outline: [number, number][],
-  holes: [number, number][][],
-  map: (u: number, v: number) => P3,
-  /** Values `map` depends on; the panel is rebuilt when they change. */
-  mapDeps: number[],
-  host: Host = 'ute',
-  offset = 0,
-) {
-  const key = JSON.stringify([outline, holes, mapDeps]);
-  const geo = useMemo(() => {
-    const shape = new THREE.Shape(outline.map(([u, v]) => new THREE.Vector2(u, v)));
-    shape.holes = holes.map((h) => new THREE.Path(h.map(([u, v]) => new THREE.Vector2(u, v))));
-    const g = new THREE.ShapeGeometry(shape);
-    const pos = g.attributes.position as THREE.BufferAttribute;
-    for (let i = 0; i < pos.count; i++) {
-      const [x, y, z] = toWorld(host, map(pos.getX(i), pos.getY(i)), offset);
-      pos.setXYZ(i, x, y, z);
-    }
-    g.computeVertexNormals();
-    return g;
-  }, [key, host, offset]);
-  useEffect(() => () => geo.dispose(), [geo]);
-  return geo;
-}
-
-/** Side profile (x, z in mm) extruded across the width with rounded (bevelled) edges, centred on the centreline. */
-export function useBevelProfile(points: [number, number][], widthMm: number, bevelMm: number) {
-  const key = JSON.stringify(points);
-  const geo = useMemo(() => {
-    const shape = new THREE.Shape(
-      points.map(([x, z]) => {
-        const [wx, wy] = toWorld('ute', { x, y: 0, z }, 0);
-        return new THREE.Vector2(wx, wy);
-      }),
-    );
-    const b = bevelMm / 1000;
-    const depth = widthMm / 1000 - 2 * b;
-    const g = new THREE.ExtrudeGeometry(shape, {
-      depth,
-      bevelEnabled: true,
-      bevelThickness: b,
-      bevelSize: b,
-      bevelOffset: -b,
-      bevelSegments: 5,
-      curveSegments: 24,
-    });
-    g.translate(0, 0, -depth / 2);
-    g.computeVertexNormals();
-    return g;
-  }, [key, widthMm, bevelMm]);
-  useEffect(() => () => geo.dispose(), [geo]);
-  return geo;
 }
 
 /** Rounded-rectangle ring (e.g. a grille surround) in the y–z plane, extruded along x. */
