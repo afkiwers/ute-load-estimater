@@ -50,12 +50,15 @@ This is a static estimate to plan with. Always confirm on a weighbridge before y
 
 ## Vehicle models
 
-Pick your ute under **Vehicle** at the top of the Ute tab. The default is the **GWM Cannon Alpha Vanta 3.0L diesel** (GVM 3,495 kg, GCM 6,555 kg, kerb 2,550 kg, payload 945 kg, braked towing 3,500 kg, unbraked 750 kg, max tow ball download 350 kg, wheelbase 3,350 mm). The list also has:
+Pick your ute under **Vehicle** at the top of the Ute tab. The default is the **GWM Cannon Alpha Vanta 3.0L diesel** (GVM 3,495 kg, GCM 6,555 kg, max front axle 1,680 kg, max rear axle 2,026 kg, kerb 2,550 kg, tare 2,458 kg, payload 945 kg, braked towing 3,500 kg, unbraked 750 kg, max tow ball download 350 kg, wheelbase 3,350 mm). The list has:
 
-- **GWM Cannon Alpha:** Lux 3.0L diesel (2026–), Ultra Hi4-T PHEV (2025–), Ultra and Lux 2.4L diesel (2024–2026), Ultra Hybrid 2.0L petrol (2024–2025)
-- **GWM Cannon:** XSR, Vanta, Ultra and Lux 2.4L diesel (2025–), Vanta 2.0L diesel (2023–2024), Cannon-X and Cannon-L 2.0L diesel (2021–2024)
+- **GWM Cannon Alpha:** Vanta and Lux 3.0L diesel, Ultra and Lux PHEV
+- **GWM Cannon:** XSR, Vanta, Ultra and Lux 2.4L diesel, Lux 2.4L diesel dual cab chassis, Ultra and Lux PHEV, Premium 2.0L diesel
+- **Earlier models:** Cannon Alpha Ultra and Lux 2.4L diesel (2024–2026) and Ultra Hybrid (2024–2025), Cannon Vanta 2.0L diesel (2023–2024), Cannon-X and Cannon-L 2.0L diesel (2021–2024)
 
-Kerb weight, GVM, GCM, payload and towing ratings are the published figures for each variant, from Australian spec listings (CarExpert, carsales, Drive, CarsGuide, 4X4 Australia). Values that are not published, or where sources disagree, are filled with typical figures and marked **placeholder** in the app until you change them or click the chip to mark them verified: always the axle limits, track, front overhang and tub dimensions, and depending on the model the tare, tyre size and load index, tow ball download, GCM or overall dimensions. Check them against your vehicle's placard, owner's manual and tow bar plate. Switching model keeps your readings, items and paint. The caravan starts with example values for a 6 m tandem van.
+The current range uses the figures in GWM Australia's brochures (Cannon Alpha, 14 October 2026; Cannon, 16 October 2026): GVM, GCM, axle limits, kerb and tare weights, payload, towing, tyres and dimensions, and for the Cannon also the tub size and how the kerb weight splits between the axles. Earlier models are no longer in a brochure; their weights and towing ratings come from Australian spec listings (CarExpert, carsales, Drive, CarsGuide, 4X4 Australia), and their axle limits, tare and tub sizes are typical values from the closest current model.
+
+Values that are not published, or where sources disagree, are marked **placeholder** in the app until you change them or click the chip to mark them verified: always the track, front overhang and tub floor height, and depending on the model the tub size, kerb weight split, tyre load index and, for earlier models, the axle limits and other figures. Check them against your vehicle's placard, owner's manual and tow bar plate. Switching model keeps your readings, items and paint. The single cab chassis Premium is not in the list because the 3D model is a dual cab. The caravan starts with example values for a 6 m tandem van.
 
 ## Develop
 

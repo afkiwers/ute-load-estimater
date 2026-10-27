@@ -3,7 +3,7 @@ import type { UteBaselineSource } from '../model/calc';
 import { kg } from '../model/format';
 import { loadIndexKg } from '../model/tyres';
 import { applyVehicle, PAINTS } from '../model/presets';
-import { VEHICLE_FAMILIES, VEHICLES, vehicleModel } from '../model/vehicles';
+import { VEHICLE_GROUPS, VEHICLES, vehicleModel } from '../model/vehicles';
 import { useStore } from '../state/store';
 import { useResult, useSetup } from '../state/result';
 import { IssueList, NumField, Section, TextField, flagFor } from './fields';
@@ -53,9 +53,9 @@ export function UtePanel() {
           <span className="field-label">Model</span>
           <span className="field-input">
             <select value={setup.ute.model} onChange={(e) => update((s) => applyVehicle(s, e.target.value))}>
-              {VEHICLE_FAMILIES.map((family) => (
-                <optgroup key={family} label={family}>
-                  {VEHICLES.filter((v) => v.family === family).map((v) => (
+              {VEHICLE_GROUPS.map((group) => (
+                <optgroup key={group} label={group}>
+                  {VEHICLES.filter((v) => v.group === group).map((v) => (
                     <option key={v.id} value={v.id}>
                       {v.label}
                     </option>
