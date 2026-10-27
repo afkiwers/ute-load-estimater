@@ -8,14 +8,14 @@
 
 Plan and check the loading of a ute and the caravan it tows. Enter your weighbridge readings and the manufacturer limits, drag accessories and gear onto a 3D model, and see the axle, wheel, tow ball and combination loads update against every limit.
 
-**[Download the latest version: ute-load-estimator.html](https://github.com/afkiwers/ute-load-estimater/releases/latest/download/ute-load-estimator.html)** ([release notes](https://github.com/afkiwers/ute-load-estimater/releases/latest))
+**[Open it in your browser](https://afkiwers.github.io/ute-load-estimater/)**, or **[download ute-load-estimator.html](https://github.com/afkiwers/ute-load-estimater/releases/latest/download/ute-load-estimator.html)** to use it offline ([release notes](https://github.com/afkiwers/ute-load-estimater/releases/latest))
 
 ## Use it
 
-1. Download [`ute-load-estimator.html` from the latest release](https://github.com/afkiwers/ute-load-estimater/releases/latest/download/ute-load-estimator.html), or the current development version from the repo root ([`ute-load-estimator.html`](ute-load-estimator.html), "Download raw file").
-2. Double-click it. It opens in Chrome straight from disk: no web server, no install, no internet needed.
+- **Online:** open [afkiwers.github.io/ute-load-estimater](https://afkiwers.github.io/ute-load-estimater/). It always runs the latest release.
+- **Offline:** download [`ute-load-estimator.html` from the latest release](https://github.com/afkiwers/ute-load-estimater/releases/latest/download/ute-load-estimator.html) and double-click it. It opens in Chrome straight from disk: no web server, no install, no internet needed. The current development version is in the repo root ([`ute-load-estimator.html`](ute-load-estimator.html), "Download raw file").
 
-Your setups are saved in the browser automatically. Use **Export** to keep a backup file or move setups to another computer, and **Import** to load one.
+Your setups are saved in the browser automatically. The online page and a downloaded file keep separate lists, so use **Export** to keep a backup file or move setups to another computer or between the two, and **Import** to load one.
 
 ## What it does
 
@@ -67,7 +67,7 @@ npm run build    # typecheck, then build ute-load-estimator.html
 
 The build inlines everything (React, three.js, styles) into one HTML file so it runs from `file://`. It is written to `dist/index.html` and copied to `ute-load-estimator.html` at the repo root. CI checks that the committed file matches the source, so run `npm run build` and commit the result after changing the code.
 
-To release, publish a release on GitHub (Releases, "Draft a new release", pick or create a tag, Publish). The Release workflow builds the file from the tagged commit, runs the tests and attaches `ute-load-estimator.html` to the release; the "latest release" download link above always points at the newest one.
+To release, publish a release on GitHub (Releases, "Draft a new release", pick or create a tag, Publish). The Release workflow builds the file from the tagged commit, runs the tests, attaches `ute-load-estimator.html` to the release and publishes it to GitHub Pages; the download link and the online page above always serve the newest release. The online page is the `gh-pages` branch, which the workflow replaces on every release. One-time setup, after the first release that runs it: Settings, Pages, Source "Deploy from a branch", branch `gh-pages`, folder `/ (root)`.
 
 Code map:
 

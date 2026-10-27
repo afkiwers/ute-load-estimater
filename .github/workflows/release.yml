@@ -1,7 +1,8 @@
 name: Release
 
 # Publishing a release on GitHub builds the single-file app from the tagged
-# commit and attaches it to the release as ute-load-estimator.html.
+# commit, attaches it to the release as ute-load-estimator.html and publishes
+# it to GitHub Pages as the gh-pages branch, served from its root.
 
 on:
   release:
@@ -27,3 +28,19 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.event.release.tag_name }}
         run: gh release upload "$TAG" ute-load-estimator.html --clobber --repo "$GITHUB_REPOSITORY"
+      - name: Publish to GitHub Pages
+        # The gh-pages branch holds only the latest release, as a single commit.
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          mkdir site
+          cp ute-load-estimator.html site/index.html
+          touch site/.nojekyll
+          cd site
+          git init -q -b gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Publish $TAG"
+          git push -q --force "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
