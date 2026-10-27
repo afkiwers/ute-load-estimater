@@ -70,6 +70,7 @@ const LINKS = [
   { label: 'Source code', href: REPO_URL },
   { label: 'Releases and downloads', href: `${REPO_URL}/releases` },
   { label: 'Report a problem', href: `${REPO_URL}/issues/new` },
+  { label: 'License', href: `${REPO_URL}/blob/main/LICENSE`, text: 'GNU GPL v3.0 or later' },
 ];
 
 export function AboutDialog({ onClose }: { onClose: () => void }) {
@@ -131,13 +132,17 @@ export function AboutDialog({ onClose }: { onClose: () => void }) {
               <th>{l.label}</th>
               <td colSpan={2}>
                 <a href={l.href} target="_blank" rel="noreferrer">
-                  {l.href.replace(/^https:\/\//, '')}
+                  {'text' in l ? l.text : l.href.replace(/^https:\/\//, '')}
                 </a>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+      <p className="about-note">
+        Free software: you can redistribute and modify it under the GNU General Public License, version 3 or any later version. It comes with
+        absolutely no warranty.
+      </p>
     </Modal>
   );
 }
