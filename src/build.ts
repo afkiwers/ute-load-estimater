@@ -70,5 +70,5 @@ export function versionRows(b: BuildStamp, rt: Runtime): AboutRow[] {
 
 /** Plain text for bug reports. */
 export function versionReport(rows: AboutRow[], userAgent: string): string {
-  return ['Ute Load Estimator', ...rows.map((r) => `${r.label}: ${r.value}`), `Browser: ${userAgent}`].join('\n');
+  return ['Vehicle Load Estimator', ...rows.map((r) => `${r.label}: ${r.value}`), `Browser: ${userAgent}`].join('\n');
 }

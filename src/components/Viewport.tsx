@@ -82,7 +82,7 @@ function ViewToolbar() {
       {towing && (
         <div className="grp">
           <button className={view === 'ute' ? 'on' : ''} onClick={() => ui.setView('ute')}>
-            Ute
+            Vehicle
           </button>
           <button className={view === 'caravan' ? 'on' : ''} onClick={() => ui.setView('caravan')}>
             Trailer
@@ -137,7 +137,7 @@ export function Viewport() {
     paletteDrag.current = null;
     if (!p) return;
     if (!p.placement) {
-      ui.showToast('Drop it onto the ute or the trailer.');
+      ui.showToast('Drop it onto the vehicle or the trailer.');
       return;
     }
     const setup = activeSetup();

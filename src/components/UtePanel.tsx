@@ -58,7 +58,7 @@ export function UtePanel() {
 
   return (
     <div className="tab-body">
-      <Section title="Vehicle">
+      <Section title="Make and model">
         <label className="field">
           <span className="field-label">Model</span>
           <span className="field-input">
@@ -81,10 +81,10 @@ export function UtePanel() {
         </label>
       </Section>
 
-      <Section title="Weighbridge readings" extra={suv ? 'unhitched' : 'ute unhitched'}>
+      <Section title="Weighbridge readings" extra="unhitched">
         <p className="section-note">
           Enter what you have: individual wheels, axles and/or the total. Missing values are derived (shown in grey) and every
-          redundant reading is cross-checked. Readings already include whatever was on the ute when weighed.
+          redundant reading is cross-checked. Readings already include whatever was on the vehicle when weighed.
         </p>
         <div className="source-badge">{SOURCE_TEXT[base.source]}</div>
         <div className="wb">

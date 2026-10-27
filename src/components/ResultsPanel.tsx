@@ -140,7 +140,7 @@ function LoadTable() {
       <table className="loads">
         <thead>
           <tr>
-            <th>Ute (kg)</th>
+            <th>Vehicle (kg)</th>
             <th>Baseline</th>
             <th>Items</th>
             {towing && <th>Hitch</th>}
@@ -258,9 +258,9 @@ function Headroom() {
       {stat('Spare GVM', h.gvm)}
       {stat('Spare front axle', h.frontAxle)}
       {stat('Spare rear axle', h.rearAxle)}
-      {setup.towing ? stat('Spare GCM', h.gcm) : stat('Ute mass now', r.ute.gross)}
+      {setup.towing ? stat('Spare GCM', h.gcm) : stat('Vehicle mass now', r.ute.gross)}
       <div style={{ gridColumn: '1 / -1' }}>
-        {stat('Heaviest trailer you could tow as the ute is loaded', h.maxCaravan, h.maxCaravanBy ? `Limited by ${h.maxCaravanBy}.` : undefined)}
+        {stat('Heaviest trailer you could tow as the vehicle is loaded', h.maxCaravan, h.maxCaravanBy ? `Limited by ${h.maxCaravanBy}.` : undefined)}
       </div>
     </div>
   );

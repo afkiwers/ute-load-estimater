@@ -33,7 +33,7 @@ function SidePanel() {
     result.issues.some((i) => i.level !== 'info' && i.fields?.some((f) => f.startsWith(prefix))) ? DOT.warn : null;
   const tabs: { id: Tab; label: string; dot?: string | null }[] = [
     { id: 'results', label: 'Results', dot: DOT[overallStatus(result)] },
-    { id: 'ute', label: 'Ute', dot: issueLevel('uteReadings') },
+    { id: 'ute', label: 'Vehicle', dot: issueLevel('uteReadings') },
     { id: 'towing', label: 'Towing', dot: issueLevel('caravanReadings') },
     { id: 'items', label: `Items (${itemCount})` },
   ];

@@ -50,7 +50,7 @@ export function Report() {
       <div className="meta">
         {u.name} · {new Date().toLocaleString('en-AU')} · Overall: {STATUS_TEXT[status]}
         {setup.towing && ` · towing ${setup.caravan.name}`}
-        {` · Ute Load Estimator ${versionLabel(BUILD)}`}
+        {` · Vehicle Load Estimator ${versionLabel(BUILD)}`}
       </div>
       {snapshot && <img src={snapshot} alt="3D view of the loaded vehicle" />}
 
@@ -82,7 +82,7 @@ export function Report() {
 
       <div className="cols">
         <div>
-          <h2>Ute wheel loads</h2>
+          <h2>Vehicle wheel loads</h2>
           <table>
             <thead>
               <tr>
@@ -216,7 +216,7 @@ export function Report() {
       <p className="meta">
         Static estimate from weighbridge readings plus planned items, made with a tool written largely with an AI assistant and
         not validated against real measurements. Check every figure and confirm on a weighbridge before travelling. Positions in mm:
-        x behind the front axle (ute) or tow ball ({T}), y right of centre, z height.
+        x behind the front axle (vehicle) or tow ball ({T}), y right of centre, z height.
       </p>
     </div>,
     host,

@@ -153,7 +153,7 @@ export function TowingPanel() {
                 {result.hitch && (
                   <p className="section-note" style={{ marginTop: 6 }}>
                     Moves {kg(result.hitch.wdhMoment / setup.ute.wheelbase)} from the rear to the front axle and{' '}
-                    {kg(result.hitch.wdhToCaravan)} onto the {T} axles. The ute now carries {kg(result.hitch.netHitch)} at the hitch.
+                    {kg(result.hitch.wdhToCaravan)} onto the {T} axles. The vehicle now carries {kg(result.hitch.netHitch)} at the hitch.
                   </p>
                 )}
               </>
@@ -196,7 +196,7 @@ export function TowingPanel() {
                 path="caravan.limits.atm"
                 label="ATM"
                 flag={atmOverTow ? 'error' : null}
-                hint={atmOverTow ? `More than the ute may tow (${kg(atmOverTow.limit!)}).` : undefined}
+                hint={atmOverTow ? `More than the vehicle may tow (${kg(atmOverTow.limit!)}).` : undefined}
               />
               <NumField path="caravan.limits.tgalr" label="TGALR" hint={`Trailer gross axle load rating: what the axle group may carry${tandem ? ', shared by both axles' : ''}.`} />
             </div>

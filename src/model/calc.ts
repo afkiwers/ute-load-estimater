@@ -342,7 +342,7 @@ export function deriveUteBaseline(r: UteReadings, ute: UteSpec, s: CheckSettings
   }
   for (const k of ['front', 'rear'] as const) {
     if (v[k] != null && v[k]! > 4500) {
-      issues.push({ level: 'warn', message: `${UTE_LABEL[k]} reads ${kg(v[k]!)}, very heavy for one ute axle. Check the reading and units.`, fields: [`uteReadings.${k}`] });
+      issues.push({ level: 'warn', message: `${UTE_LABEL[k]} reads ${kg(v[k]!)}, very heavy for one axle. Check the reading and units.`, fields: [`uteReadings.${k}`] });
     }
   }
 
@@ -419,7 +419,7 @@ export function deriveUteBaseline(r: UteReadings, ute: UteSpec, s: CheckSettings
     if (frontPct < 38 || frontPct > 68) {
       issues.push({
         level: 'warn',
-        message: `The front axle carries ${pct(frontPct)} of the measured weight. Utes usually sit between about 40% and 65%; check the readings.`,
+        message: `The front axle carries ${pct(frontPct)} of the measured weight. Utes and SUVs usually sit between about 40% and 65%; check the readings.`,
         fields: ['uteReadings.front', 'uteReadings.rear'],
       });
     }
@@ -429,7 +429,7 @@ export function deriveUteBaseline(r: UteReadings, ute: UteSpec, s: CheckSettings
     if (tare && gross < tare - tolerance(tare, s)) {
       issues.push({
         level: 'warn',
-        message: `Measured ${kg(gross)} is less than the tare weight (${kg(tare)}), the ute empty with 10 L of fuel. Check the readings.`,
+        message: `Measured ${kg(gross)} is less than the tare weight (${kg(tare)}), the vehicle empty with 10 L of fuel. Check the readings.`,
         fields: ['uteReadings.total'],
       });
     } else if (!tare && kerb && gross < kerb * 0.95) {
@@ -766,14 +766,14 @@ export function compute(setup: Setup): Result {
     checks.push(
       limitCheck(s, 'towCapacity', 'Towing', `${Tc} mass vs ${cv.hasBrakes ? 'braked' : 'unbraked'} towing capacity`, c.mass, towCap),
       limitCheck(s, 'towBall', 'Towing', 'Tow ball download', B, lim.towBallMax,
-        hitch.wdh.enabled ? `Static ball weight. With the WDH tensioned the ute carries ${kg(hitchResult.netHitch)} at the hitch.` : undefined),
+        hitch.wdh.enabled ? `Static ball weight. With the WDH tensioned the vehicle carries ${kg(hitchResult.netHitch)} at the hitch.` : undefined),
     );
     if (hitch.towbarRating) checks.push(limitCheck(s, 'towbarRating', 'Towing', `${Tc} mass vs tow bar rating`, c.mass, hitch.towbarRating));
     // A plate that allows loading the trailer past what the ute may tow is over, however it is loaded today.
     const maxTow = minOf(towCap, hitch.towbarRating);
     const atm = cv.limits.atm;
     if (atm && maxTow) {
-      const by = maxTow === towCap ? `the ute's ${cv.hasBrakes ? 'braked' : 'unbraked'} towing capacity` : 'the tow bar rating';
+      const by = maxTow === towCap ? `the vehicle's ${cv.hasBrakes ? 'braked' : 'unbraked'} towing capacity` : 'the tow bar rating';
       checks.push({
         id: 'atmVsTow',
         group: 'Towing',
@@ -789,7 +789,7 @@ export function compute(setup: Setup): Result {
     }
     if (hitch.towbarBallRating) checks.push(limitCheck(s, 'towbarBall', 'Towing', 'Ball download vs tow bar rating', B, hitch.towbarBallRating));
     checks.push(limitCheck(s, 'gcm', 'Towing', 'Gross combination mass (GCM)', unhitchedGross + c.mass, lim.gcm,
-      `Ute ${kg(unhitchedGross)} + ${T} ${kg(c.mass)}.`));
+      `Vehicle ${kg(unhitchedGross)} + ${T} ${kg(c.mass)}.`));
     checks.push({
       id: 'ballPct',
       group: 'Towing',
@@ -803,7 +803,7 @@ export function compute(setup: Setup): Result {
       detail: c.ballPct < s.ballPctMin
         ? `Below ${pct(s.ballPctMin)} the combination is more prone to sway.`
         : c.ballPct > s.ballPctMax
-          ? `Above ${pct(s.ballPctMax)} the ute's rear is heavily loaded and the front unloaded.`
+          ? `Above ${pct(s.ballPctMax)} the vehicle's rear is heavily loaded and the front unloaded.`
           : `Guideline ${pct(s.ballPctMin)}–${pct(s.ballPctMax)}.`,
     });
     checks.push({
@@ -849,7 +849,7 @@ export function compute(setup: Setup): Result {
   const maxCaravan = minOf(towCap, gcmRoom, hitch.towbarRating);
   let maxCaravanBy: string | null = null;
   if (maxCaravan != null) {
-    maxCaravanBy = maxCaravan === gcmRoom ? 'GCM minus the ute as loaded' : maxCaravan === hitch.towbarRating ? 'tow bar rating' : 'towing capacity';
+    maxCaravanBy = maxCaravan === gcmRoom ? 'GCM minus the vehicle as loaded' : maxCaravan === hitch.towbarRating ? 'tow bar rating' : 'towing capacity';
   }
 
   return {

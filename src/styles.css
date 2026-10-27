@@ -1304,8 +1304,18 @@ table.loads tr.total td {
   }
 }
 
+/* Short of room for the name and every button on one row: the logo stands for the name. */
+@media (min-width: 1181px) and (max-width: 1340px) {
+  .brand {
+    margin-right: 0;
+  }
+  .brand-text {
+    display: none;
+  }
+}
+
 /* The buttons get a row of their own, scrolling sideways if they still don't fit. */
-@media (max-width: 1100px) {
+@media (max-width: 1180px) {
   .topbar {
     flex-wrap: wrap;
     gap: 8px;

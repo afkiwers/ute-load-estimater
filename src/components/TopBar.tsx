@@ -62,8 +62,8 @@ export function TopBar() {
         </svg>
       </button>
       <div className="brand">
-        <span className="brand-mark">U</span>
-        <span className="brand-text">Ute Load Estimator</span>
+        <span className="brand-mark">V</span>
+        <span className="brand-text">Vehicle Load Estimator</span>
       </div>
       <select value={activeId} onChange={(e) => selectSetup(e.target.value)} aria-label="Setup">
         {order.map((id) => (
@@ -104,7 +104,7 @@ export function TopBar() {
           title="Save all setups to a file"
           onClick={() => {
             const data = { app: 'ute-load-estimator', version: 1, exportedAt: new Date().toISOString(), setups: order.map((id) => setups[id]) };
-            download(`ute-load-setups-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(data, null, 2));
+            download(`vehicle-load-setups-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(data, null, 2));
           }}
         >
           Export

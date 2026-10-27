@@ -52,7 +52,7 @@ export function AboutDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <Modal
-      title="About Ute Load Estimator"
+      title="About Vehicle Load Estimator"
       onClose={onClose}
       footer={
         <>

@@ -1,12 +1,12 @@
 > [!WARNING]
-> **Vibe-coded, for illustrative purposes only.** Ute Load Estimator was written largely with an AI assistant. Its
+> **Vibe-coded, for illustrative purposes only.** Vehicle Load Estimator was written largely with an AI assistant. Its
 > results look reasonable, but they have not all been validated against real weighbridge measurements. Check every
 > number yourself against your weighbridge dockets, vehicle placard, owner's manual and tow bar plate before you load
 > or tow: don't base safety or compliance decisions on this tool alone.
 
-# Ute Load Estimator
+# Vehicle Load Estimator
 
-Plan and check the loading of a ute (or SUV) and the caravan it tows. Enter your weighbridge readings and the manufacturer limits, drag accessories and gear onto a 3D model, and see the axle, wheel, tow ball and combination loads update against every limit.
+Plan and check the loading of a ute or SUV and the caravan it tows. Enter your weighbridge readings and the manufacturer limits, drag accessories and gear onto a 3D model, and see the axle, wheel, tow ball and combination loads update against every limit.
 
 **[Open it in your browser](https://afkiwers.github.io/ute-load-estimater/)**, or **[download ute-load-estimator.html](https://github.com/afkiwers/ute-load-estimater/releases/latest/download/ute-load-estimator.html)** to use it offline ([release notes](https://github.com/afkiwers/ute-load-estimater/releases/latest))
 
@@ -21,7 +21,7 @@ Your setups are saved in the browser automatically. The online page and a downlo
 
 ## What it does
 
-**Weighbridge readings (Ute tab).** Enter whatever you measured: the four wheels, the two axles and/or the total. Missing values are derived and shown in grey, and every redundant reading is cross-checked:
+**Weighbridge readings (Vehicle tab).** Enter whatever you measured: the four wheels, the two axles and/or the total. Missing values are derived and shown in grey, and every redundant reading is cross-checked:
 
 - FL + FR against the front axle, RL + RR against the rear axle, front + rear against the total (tolerance ±20 kg or ±2%, adjustable)
 - left/right imbalance over 10%, an unusual front/rear split, a total lighter than the published kerb weight, implausible values
@@ -30,7 +30,7 @@ Until you have weighed, the published kerb weight is used with an assumed front/
 
 **Manufacturer limits.** GVM, GCM, front and rear axle, kerb, tare, payload, braked and unbraked towing, max tow ball download, tyre load index. Every check shows the value, the limit, the spare capacity and turns amber near (95%, adjustable) or red over the limit, in the results panel, the gauge strip and on the 3D labels.
 
-**Items in 3D.** Drag items from the palette onto the ute or caravan (winch, bull bar, people, roof rack, rooftop tent, drawers, fridge, water, gas bottles, bikes, ...) or create your own with its exact weight. Items rest on the surface you drop them on and stack on each other; people snap to seats. Drag them around, or type an exact position. For the selected item the inspector shows its effect on each axle and **how much more weight would fit at that spot** before the first limit is reached.
+**Items in 3D.** Drag items from the palette onto the vehicle or caravan (winch, bull bar, people, roof rack, rooftop tent, drawers, fridge, water, gas bottles, bikes, ...) or create your own with its exact weight. Items rest on the surface you drop them on and stack on each other; people snap to seats. Drag them around, or type an exact position. For the selected item the inspector shows its effect on each axle and **how much more weight would fit at that spot** before the first limit is reached.
 
 Readings already include what was on the vehicle when you weighed it. Tick **Was on the vehicle when weighed** for those items (or use **Mark ticked items as weighed** right after weighing): they then only change the result when you move them or untick them, so nothing is counted twice.
 
@@ -40,9 +40,9 @@ Readings already include what was on the vehicle when you weighed it. Tick **Was
 
 ## How the numbers are worked out
 
-Distances are in mm, masses in kg. On the ute, `x` is measured rearward from the front axle centre; on the caravan, from the tow ball (coupling) centre. `y` is to the right of the centreline (driver side), `z` is height.
+Distances are in mm, masses in kg. On the vehicle, `x` is measured rearward from the front axle centre; on the caravan, from the tow ball (coupling) centre. `y` is to the right of the centreline (driver side), `z` is height.
 
-- **Ute.** A beam on two axles: a mass `m` at `x` puts `m·(L−x)/L` on the front and `m·x/L` on the rear axle (wheelbase `L`). Ahead of the front axle (a winch) it unloads the rear; behind the rear axle it unloads the front. Each axle shares its load between its wheels by lever over the track. A four-wheel vehicle is statically indeterminate side to side, so roll stiffness is ignored, as is usual for load planning.
+- **Vehicle.** A beam on two axles: a mass `m` at `x` puts `m·(L−x)/L` on the front and `m·x/L` on the rear axle (wheelbase `L`). Ahead of the front axle (a winch) it unloads the rear; behind the rear axle it unloads the front. Each axle shares its load between its wheels by lever over the track. A four-wheel vehicle is statically indeterminate side to side, so roll stiffness is ignored, as is usual for load planning.
 - **Caravan.** A beam on the tow ball and the axle group: `ball = m·(a−x)/a`. For a single axle `a` is its distance from the tow ball; tandem axles are taken to share the load equally, so `a` is the average of their two distances. Weight behind the axles lifts the ball. The trailer's own weight is as weighed (or plated) with the axles where they were then; move the axles afterwards and its centre of mass stays put, so axles further back put more of it on the ball. Entering a reading or the plated tare ball weight takes the axles as weighed where they are, and a note under the axle distances offers the same when you were only correcting a measurement. Each axle starts from its weighbridge reading (or half the group if not weighed separately) and takes an equal share of any change after that.
 - **Hitching.** The ball weight `B` sits `d` behind the rear axle: the rear axle gains `B·(L+d)/L` and the front axle loses `B·d/L`.
 - **WDH.** The spring bars apply a couple `M` at the hitch. It moves `M/L` from the rear to the front axle and `M/a` onto the caravan axles. `M` is chosen so the front axle regains the selected share of the load hitching took off it.
@@ -52,7 +52,7 @@ This is a static estimate to plan with. Always confirm on a weighbridge before y
 
 ## Vehicle models
 
-Pick your vehicle under **Vehicle** at the top of the Ute tab. The default is the **GWM Cannon Alpha Vanta 3.0L diesel** (GVM 3,495 kg, GCM 6,555 kg, max front axle 1,680 kg, max rear axle 2,026 kg, kerb 2,550 kg, tare 2,458 kg, payload 945 kg, braked towing 3,500 kg, unbraked 750 kg, max tow ball download 350 kg, wheelbase 3,350 mm). The list has:
+Pick your vehicle under **Make and model** at the top of the Vehicle tab. The default is the **GWM Cannon Alpha Vanta 3.0L diesel** (GVM 3,495 kg, GCM 6,555 kg, max front axle 1,680 kg, max rear axle 2,026 kg, kerb 2,550 kg, tare 2,458 kg, payload 945 kg, braked towing 3,500 kg, unbraked 750 kg, max tow ball download 350 kg, wheelbase 3,350 mm). The list has:
 
 - **GWM Cannon Alpha:** Vanta and Lux 3.0L diesel, Ultra and Lux PHEV
 - **GWM Cannon:** XSR, Vanta, Ultra and Lux 2.4L diesel, Lux 2.4L diesel dual cab chassis, Ultra and Lux PHEV, Premium 2.0L diesel
@@ -85,13 +85,13 @@ To release, publish a release on GitHub (Releases, "Draft a new release", pick o
 
 Code map:
 
-- `src/model/` load model (`calc.ts`), geometry, tyre tables, presets, trailer types (`trailers.ts`); no UI code. The towed vehicle is called `caravan` in the code and in saved setups whatever its type; `caravan.kind` says what it is.
+- `src/model/` load model (`calc.ts`), geometry, tyre tables, presets, trailer types (`trailers.ts`); no UI code. The tow vehicle is called `ute` in the code and in saved setups whatever its body (`ute.bodyStyle` says), and the towed vehicle `caravan` whatever its type (`caravan.kind`).
 - `src/state/` setups store (saved in the browser), UI state
 - `src/three/` 3D scene, vehicle models (ute and SUV bodies), drag and drop
 - `src/components/` panels, inspector, report
 
 ## License
 
-Ute Load Estimator is free software: you can redistribute it and/or modify it under the terms of the [GNU General Public License](LICENSE) as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+Vehicle Load Estimator is free software: you can redistribute it and/or modify it under the terms of the [GNU General Public License](LICENSE) as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
 It is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the [GNU General Public License](LICENSE) for more details.

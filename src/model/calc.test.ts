@@ -446,14 +446,14 @@ describe('compliance plate', () => {
     expect(r.checks.find((c) => c.id === 'cvTyre_left')!.detail).toBe('Rated 1,550 kg per tyre.');
   });
 
-  it('flags a plated ATM above what the ute may tow, however lightly the trailer is loaded', () => {
+  it('flags a plated ATM above what the vehicle may tow, however lightly the trailer is loaded', () => {
     const s = plated();
     s.ute.limits.brakedTow = 3500;
     const check = () => compute(s).checks.find((c) => c.id === 'atmVsTow')!;
     expect(check()).toMatchObject({ group: 'Towing', value: 3500, limit: 3500, status: 'ok' });
     s.caravan.limits.atm = 3600;
     expect(check()).toMatchObject({ limit: 3500, status: 'over' });
-    expect(check().detail).toContain("100 kg more than the ute's braked towing capacity");
+    expect(check().detail).toContain("100 kg more than the vehicle's braked towing capacity");
     // A lower tow bar rating sets the limit; an unbraked trailer is held to the unbraked capacity.
     s.hitch.towbarRating = 3000;
     expect(check()).toMatchObject({ limit: 3000, status: 'over' });

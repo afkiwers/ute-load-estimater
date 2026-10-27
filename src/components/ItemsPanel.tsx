@@ -59,7 +59,7 @@ export function ItemsPanel() {
   const result = useResult();
   const update = useStore((s) => s.update);
   const groups: { title: string; items: LoadItem[] }[] = [
-    { title: 'On the ute', items: setup.items.filter((i) => i.host === 'ute') },
+    { title: 'On the vehicle', items: setup.items.filter((i) => i.host === 'ute') },
     {
       title: setup.towing ? `In / on the ${trailerName(setup.caravan.kind)}` : `${trailerName(setup.caravan.kind, true)} (towing is off)`,
       items: setup.items.filter((i) => i.host === 'caravan'),

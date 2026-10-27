@@ -27,7 +27,7 @@ describe('build info', () => {
     });
     expect(versionReport(rows, 'Chrome')).toBe(
       [
-        'Ute Load Estimator',
+        'Vehicle Load Estimator',
         'Version: v1.0.2',
         'Commit: 636249c',
         'Commit date: 2026-10-27',

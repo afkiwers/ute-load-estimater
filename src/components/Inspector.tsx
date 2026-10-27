@@ -192,7 +192,7 @@ export function Inspector() {
             Delete
           </button>
           <span className="field-hint" style={{ marginLeft: 'auto', alignSelf: 'center' }}>
-            {num(item.mass)} kg on the {item.host}
+            {num(item.mass)} kg on the {item.host === 'ute' ? 'vehicle' : trailerName(setup.caravan.kind)}
           </span>
         </div>
       </div>

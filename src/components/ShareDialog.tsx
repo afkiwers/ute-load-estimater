@@ -36,7 +36,7 @@ export function ShareDialog({ onClose }: { onClose: () => void }) {
   const share = async () => {
     if (!url) return;
     try {
-      await navigator.share({ title: `Ute load setup: ${setup.name}`, text: `${setup.name}: ${setupSummary(setup)}.`, url });
+      await navigator.share({ title: `Vehicle load setup: ${setup.name}`, text: `${setup.name}: ${setupSummary(setup)}.`, url });
     } catch (e) {
       if ((e as Error).name !== 'AbortError') await copy(url, 'Link');
     }
