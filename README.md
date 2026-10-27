@@ -2,6 +2,8 @@
 
 Plan and check the loading of a ute and the caravan it tows. Enter your weighbridge readings and the manufacturer limits, drag accessories and gear onto a 3D model, and see the axle, wheel, tow ball and combination loads update against every limit.
 
+**[Download the latest version: ute-load-estimator.html](https://github.com/afkiwers/ute-load-estimater/releases/latest/download/ute-load-estimator.html)** ([release notes](https://github.com/afkiwers/ute-load-estimater/releases/latest))
+
 ## Use it
 
 1. Download [`ute-load-estimator.html` from the latest release](https://github.com/afkiwers/ute-load-estimater/releases/latest/download/ute-load-estimator.html), or the current development version from the repo root ([`ute-load-estimator.html`](ute-load-estimator.html), "Download raw file").
