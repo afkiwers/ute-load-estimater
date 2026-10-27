@@ -86,7 +86,7 @@ export function defaultCaravan(): CaravanSpec {
     bodyHeight: 2050,
     floorHeight: 760,
     tyre: { size: '235/75R15', loadIndex: 109 },
-    limits: { atm: 3000, gtm: 2800, tare: 2350, tareBall: 230 },
+    limits: { atm: 3000, gtm: 2800, tare: 2350, tareBall: 230, axleRating: 1600 },
   };
 }
 
@@ -95,7 +95,7 @@ export function defaultSettings(): CheckSettings {
 }
 
 export const emptyUteReadings = (): UteReadings => ({ total: null, front: null, rear: null, fl: null, fr: null, rl: null, rr: null });
-export const emptyCaravanReadings = (): CaravanReadings => ({ total: null, ball: null, axle: null, left: null, right: null });
+export const emptyCaravanReadings = (): CaravanReadings => ({ total: null, ball: null, axle: null, axleFront: null, axleRear: null, left: null, right: null });
 
 export const PRESET_PLACEHOLDERS = [
   'ute.trackFront',
@@ -127,6 +127,7 @@ export const PRESET_PLACEHOLDERS = [
   'caravan.limits.gtm',
   'caravan.limits.tare',
   'caravan.limits.tareBall',
+  'caravan.limits.axleRating',
 ];
 
 export interface ItemTemplate {

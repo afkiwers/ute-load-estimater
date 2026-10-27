@@ -140,6 +140,15 @@ export function Report() {
                     <td>Caravan axle group</td>
                     <td className="r">{kg(r.caravan.axle)}</td>
                   </tr>
+                  {r.caravan.axleLoads.length > 1 && (
+                    <tr>
+                      <td>Caravan front / rear axle</td>
+                      <td className="r">
+                        {r.caravan.axleLoads.map((x) => num(x)).join(' / ')} kg
+                        {setup.caravan.limits.axleRating ? ` (rating ${num(setup.caravan.limits.axleRating)} each)` : ''}
+                      </td>
+                    </tr>
+                  )}
                   <tr>
                     <td>Tow ball → caravan {setup.caravan.axles.length > 1 ? 'axles' : 'axle'}</td>
                     <td className="r">{setup.caravan.axles.map((x) => num(x)).join(' / ')} mm</td>

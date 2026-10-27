@@ -88,6 +88,8 @@ export function TowingPanel() {
               {reading('ball', 'Ball weight')}
               {reading('axle', 'Axle group')}
               <div />
+              {tandem && reading('axleFront', 'Front axle')}
+              {tandem && reading('axleRear', 'Rear axle')}
               {reading('left', 'Left side')}
               {reading('right', 'Right side')}
             </div>
@@ -105,6 +107,7 @@ export function TowingPanel() {
               <NumField path="caravan.limits.gtm" label="GTM" />
               <NumField path="caravan.limits.tare" label="Tare" />
               <NumField path="caravan.limits.tareBall" label="Tare ball weight" />
+              <NumField path="caravan.limits.axleRating" label={tandem ? 'Axle rating (each)' : 'Axle rating'} hint="From the axle or compliance plate." />
             </div>
             <div style={{ marginTop: 8 }}>
               <Toggle path="caravan.hasBrakes" label="Caravan has brakes" />

@@ -27,9 +27,17 @@ function upgradeCaravanAxles(setup: Raw) {
   }
 }
 
+/** The per-axle rating arrived later; old saves get the example value, flagged as a placeholder. */
+function flagNewAxleRating(setup: Raw) {
+  const limits = (setup.caravan as Raw | undefined)?.limits as Raw | undefined;
+  if (!limits || 'axleRating' in limits || !Array.isArray(setup.placeholders)) return;
+  (setup.placeholders as string[]).push('caravan.limits.axleRating');
+}
+
 function upgradeSetup<T>(raw: T): T {
   const copy = structuredClone(raw) as Raw;
   upgradeCaravanAxles(copy);
+  flagNewAxleRating(copy);
   const cv = copy.caravan as Raw | undefined;
   if (cv && Array.isArray(cv.axles) && (cv.axles.length < 1 || cv.axles.length > 2)) delete cv.axles;
   return copy as T;

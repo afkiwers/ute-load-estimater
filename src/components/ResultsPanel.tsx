@@ -207,6 +207,19 @@ function LoadTable() {
               <td>{signedKg(r.caravan.axleRight - r.caravan.loads.right).replace(' kg', '')}</td>
               <td>{num(r.caravan.axleRight)}</td>
             </tr>
+            {r.caravan.axleLoads.length > 1 &&
+              r.caravan.axleLoads.map((load, i) => {
+                const share = (x: number) => signedKg(x / r.caravan!.axleLoads.length).replace(' kg', '');
+                return (
+                  <tr key={i}>
+                    <td>{i === 0 ? 'Front axle' : 'Rear axle'}</td>
+                    <td>{num(r.caravan!.baseline.axles[i])}</td>
+                    <td>{share(r.caravan!.items.left + r.caravan!.items.right)}</td>
+                    <td>{share(r.hitch!.wdhToCaravan)}</td>
+                    <td>{num(load)}</td>
+                  </tr>
+                );
+              })}
             <tr className="total">
               <td>Caravan mass</td>
               <td>{num(r.caravan.baseline.loads.ball + r.caravan.baseline.loads.left + r.caravan.baseline.loads.right)}</td>

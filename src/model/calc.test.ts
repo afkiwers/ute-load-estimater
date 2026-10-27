@@ -358,3 +358,64 @@ describe('caravan axles', () => {
     expect(normalizeSetup(old).caravan.axles).toEqual([5200]);
   });
 });
+
+describe('caravan front and rear axle weights', () => {
+  const tandem = () => ({ ...newSetup().caravan, axles: [4800, 5800] });
+
+  it('takes the axle group from the front and rear axle readings', () => {
+    const b = deriveCaravanBaseline({ ...emptyCaravanReadings(), ball: 250, axleFront: 1180, axleRear: 1170 }, tandem(), settings);
+    expect(b.source).toBe('measured');
+    expect(b.axles).toEqual([1180, 1170]);
+    expect(b.derived.axle).toBe(2350);
+    expect(b.derived.total).toBe(2600);
+  });
+
+  it('derives the other axle from one axle and the group', () => {
+    const b = deriveCaravanBaseline({ ...emptyCaravanReadings(), total: 2600, ball: 250, axleFront: 1200 }, tandem(), settings);
+    expect(b.axles).toEqual([1200, 1150]);
+    expect(b.derived.axleRear).toBe(1150);
+  });
+
+  it('flags axle readings that do not add up to the group', () => {
+    const b = deriveCaravanBaseline({ ...emptyCaravanReadings(), axle: 2350, axleFront: 1180, axleRear: 1270 }, tandem(), settings);
+    expect(b.issues.some((i) => i.message.startsWith('Caravan front + rear axle vs axle group'))).toBe(true);
+  });
+
+  it('flags a large front/rear imbalance', () => {
+    const b = deriveCaravanBaseline({ ...emptyCaravanReadings(), ball: 250, axleFront: 1400, axleRear: 950 }, tandem(), settings);
+    expect(b.issues.some((i) => i.fields?.includes('caravanReadings.axleRear') && i.level === 'warn')).toBe(true);
+  });
+
+  it('splits an unmeasured group evenly and ignores per-axle readings on a single axle', () => {
+    expect(deriveCaravanBaseline({ ...emptyCaravanReadings(), total: 2600, ball: 260 }, tandem(), settings).axles).toEqual([1170, 1170]);
+    const single = { ...newSetup().caravan, axles: [5300] };
+    const b = deriveCaravanBaseline({ ...emptyCaravanReadings(), total: 2600, ball: 260, axleFront: 900, axleRear: 900 }, single, settings);
+    expect(b.axles).toEqual([2340]);
+    expect(b.issues.filter((i) => i.level !== 'info')).toHaveLength(0);
+  });
+
+  it('shares later changes equally and checks each axle against its rating', () => {
+    const s = bareSetup();
+    s.towing = true;
+    s.caravan.axles = [4800, 5800];
+    s.caravan.limits.axleRating = 1240;
+    s.caravanReadings = { ...emptyCaravanReadings(), ball: 250, axleFront: 1220, axleRear: 1130 };
+    s.items = [item({ host: 'caravan', mass: 100, pos: { x: 5300, y: 0, z: 800 } })];
+    const r = compute(s);
+    expect(r.caravan!.axleLoads[0]).toBeCloseTo(1270);
+    expect(r.caravan!.axleLoads[1]).toBeCloseTo(1180);
+    expect(r.checks.find((c) => c.id === 'cvAxle_0')!.status).toBe('over');
+    expect(r.checks.find((c) => c.id === 'cvAxle_1')!.status).toBe('near');
+    // The heaviest axle sets the tyre check.
+    expect(r.checks.find((c) => c.id === 'cvTyre_left')!.value).toBeCloseTo(1270 / 2);
+  });
+
+  it('flags the new axle rating as a placeholder on old saves', () => {
+    const old = structuredClone(newSetup()) as unknown as Record<string, any>;
+    delete old.caravan.limits.axleRating;
+    old.placeholders = [];
+    const s = normalizeSetup(old);
+    expect(s.caravan.limits.axleRating).toBe(1600);
+    expect(s.placeholders).toContain('caravan.limits.axleRating');
+  });
+});

@@ -59,6 +59,8 @@ export interface UteBaseline {
 
 export interface CaravanBaseline {
   loads: CaravanLoads;
+  /** Load on each axle, front first (one entry for a single axle). */
+  axles: number[];
   source: CaravanBaselineSource;
   derived: Partial<Record<keyof CaravanReadings, number>>;
   issues: Issue[];
@@ -97,6 +99,8 @@ export interface CaravanResult {
   axleLeft: number;
   axleRight: number;
   axle: number;
+  /** Load on each axle, front first. Changes since weighing are shared equally between tandem axles. */
+  axleLoads: number[];
   ballPct: number;
 }
 
@@ -201,6 +205,8 @@ const CARAVAN_LABEL: Record<keyof CaravanReadings, string> = {
   total: 'Caravan total',
   ball: 'Ball weight',
   axle: 'Axle group',
+  axleFront: 'Front axle',
+  axleRear: 'Rear axle',
   left: 'Left side',
   right: 'Right side',
 };
@@ -413,18 +419,24 @@ export function deriveCaravanBaseline(
 ): CaravanBaseline {
   const issues: Issue[] = [];
   const derived: CaravanBaseline['derived'] = {};
-  positivity(r, CARAVAN_LABEL, 'caravanReadings', issues);
+  const tandem = cv.axles.length === 2;
+  // Per-axle readings only mean something on a tandem; ignore leftovers after switching to a single axle.
+  const readings = tandem ? r : { ...r, axleFront: null, axleRear: null };
+  positivity(readings, CARAVAN_LABEL, 'caravanReadings', issues);
   const v = {
     total: clean(r.total),
     ball: clean(r.ball),
     axle: clean(r.axle),
+    axleFront: clean(readings.axleFront),
+    axleRear: clean(readings.axleRear),
     left: clean(r.left),
     right: clean(r.right),
   };
 
   const sides = v.left != null && v.right != null ? v.left + v.right : null;
-  const axleMeasured = sides ?? v.axle;
-  if (v.axle == null && sides != null) derived.axle = sides;
+  const perAxle = v.axleFront != null && v.axleRear != null ? v.axleFront + v.axleRear : null;
+  const axleMeasured = perAxle ?? sides ?? v.axle;
+  if (v.axle == null && axleMeasured != null) derived.axle = axleMeasured;
   let axle = axleMeasured;
   let ball = v.ball;
   let source: CaravanBaselineSource = 'measured';
@@ -472,6 +484,27 @@ export function deriveCaravanBaseline(
   if (v.total == null && derived.total === undefined) derived.total = ball + axle!;
 
   const [left, right] = splitAxle(axle!, v.left, v.right, 'left', 'right', derived, issues, 'Caravan axle group', 'caravanReadings');
+  const axles = tandem
+    ? splitAxle(axle!, v.axleFront, v.axleRear, 'axleFront', 'axleRear', derived, issues, 'Caravan axles', 'caravanReadings')
+    : [axle!];
+
+  if (perAxle != null && v.axle != null) {
+    mismatch(issues, s, 'Caravan front + rear axle vs axle group', perAxle, v.axle, ['caravanReadings.axleFront', 'caravanReadings.axleRear', 'caravanReadings.axle']);
+  }
+  if (perAxle != null && sides != null) {
+    mismatch(issues, s, 'Caravan front + rear axle vs left + right side', perAxle, sides, ['caravanReadings.axleFront', 'caravanReadings.axleRear', 'caravanReadings.left', 'caravanReadings.right']);
+  }
+  if (v.axleFront != null && v.axleRear != null) {
+    const mean = (v.axleFront + v.axleRear) / 2;
+    const diffPct = (Math.abs(v.axleFront - v.axleRear) / mean) * 100;
+    if (diffPct > 15) {
+      issues.push({
+        level: 'warn',
+        message: `The caravan's front and rear axle differ by ${pct(diffPct)} (${kg(v.axleFront)} vs ${kg(v.axleRear)}). Tandem axles usually carry similar loads: check the readings, that the caravan was level, and the suspension.`,
+        fields: ['caravanReadings.axleFront', 'caravanReadings.axleRear'],
+      });
+    }
+  }
 
   if (sides != null && v.axle != null) {
     mismatch(issues, s, 'Caravan left + right vs axle group', sides, v.axle, ['caravanReadings.left', 'caravanReadings.right', 'caravanReadings.axle']);
@@ -501,7 +534,7 @@ export function deriveCaravanBaseline(
     }
   }
 
-  return { loads: { ball, left, right }, source, derived, issues };
+  return { loads: { ball, left, right }, axles, source, derived, issues };
 }
 
 function limitStatus(value: number, limit: number | null, s: CheckSettings): CheckStatus {
@@ -620,6 +653,7 @@ export function compute(setup: Setup): Result {
 
     const axleLeft = loads.left + M / a / 2;
     const axleRight = loads.right + M / a / 2;
+    const groupChange = axleLeft + axleRight - (cvBase.loads.left + cvBase.loads.right);
     caravanResult = {
       baseline: cvBase,
       items: cvItems,
@@ -628,6 +662,7 @@ export function compute(setup: Setup): Result {
       axleLeft,
       axleRight,
       axle: axleLeft + axleRight,
+      axleLoads: cvBase.axles.map((x) => x + groupChange / cvBase.axles.length),
       ballPct: mass > 0 ? (B / mass) * 100 : 0,
     };
     const frontHitched = frontUnhitched + frontDelta;
@@ -716,11 +751,20 @@ export function compute(setup: Setup): Result {
       limitCheck(s, 'gtm', 'Caravan', 'Axle group vs GTM', c.axle, cv.limits.gtm,
         hitchResult.wdhToCaravan > 0 ? `Includes ${kg(hitchResult.wdhToCaravan)} moved by the WDH.` : undefined),
     );
+    const n = c.axleLoads.length;
+    c.axleLoads.forEach((load, i) => {
+      checks.push(
+        limitCheck(s, `cvAxle_${i}`, 'Caravan', n > 1 ? `Caravan ${i === 0 ? 'front' : 'rear'} axle` : 'Caravan axle', load, cv.limits.axleRating,
+          cv.limits.axleRating ? undefined : 'Enter the axle rating from the axle or compliance plate.'),
+      );
+    });
+    // Each side's share of the group, applied to the heaviest axle, gives the most loaded tyre.
     const cvTyreKg = loadIndexKg(cv.tyre.loadIndex);
-    const n = cv.axles.length;
+    const heaviest = Math.max(...c.axleLoads);
+    const sideTyre = (side: number) => (c.axle > 0 ? (heaviest * side) / c.axle : side / n);
     checks.push(
-      limitCheck(s, 'cvTyre_left', 'Caravan', `Caravan left tyre${n > 1 ? 's (each)' : ''}`, c.axleLeft / n, cvTyreKg),
-      limitCheck(s, 'cvTyre_right', 'Caravan', `Caravan right tyre${n > 1 ? 's (each)' : ''}`, c.axleRight / n, cvTyreKg),
+      limitCheck(s, 'cvTyre_left', 'Caravan', `Caravan left tyre${n > 1 ? ' (heaviest)' : ''}`, sideTyre(c.axleLeft), cvTyreKg),
+      limitCheck(s, 'cvTyre_right', 'Caravan', `Caravan right tyre${n > 1 ? ' (heaviest)' : ''}`, sideTyre(c.axleRight), cvTyreKg),
     );
     if (cv.limits.atm && towCap && cv.limits.atm > towCap) {
       checks.push({

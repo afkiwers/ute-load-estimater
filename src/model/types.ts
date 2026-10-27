@@ -126,6 +126,8 @@ export interface CaravanSpec {
     gtm: number | null;
     tare: number | null;
     tareBall: number | null;
+    /** Rated capacity of each axle, from the axle or compliance plate. */
+    axleRating: number | null;
   };
 }
 
@@ -146,6 +148,9 @@ export interface CaravanReadings {
   ball: number | null;
   /** Axle group alone (coupled, or jockey wheel off the bridge). */
   axle: number | null;
+  /** Tandem only: each axle on its own, one axle at a time on the weighbridge. */
+  axleFront: number | null;
+  axleRear: number | null;
   left: number | null;
   right: number | null;
 }
