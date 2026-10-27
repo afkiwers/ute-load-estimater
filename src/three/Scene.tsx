@@ -1,9 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { ContactShadows, Environment, Grid, Lightformer, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { caravanGeometry, caravanOffset, uteGeometry } from '../model/geometry';
-import { activeSetup } from '../state/store';
+import { activeSetup, useActive, useStore } from '../state/store';
 import { useResult, useSetup } from '../state/result';
 import { useUi, type ViewPreset } from '../state/ui';
 import { UteModel } from './UteModel';
@@ -48,12 +48,15 @@ const DIRECTIONS: Record<ViewPreset, [number, number, number]> = {
   rear: [-1, 0.3, -0.2],
 };
 
-/** Places the camera along the preset direction, as close as possible while the whole box stays in view. */
-function frame(preset: ViewPreset, camera: THREE.PerspectiveCamera) {
+/**
+ * Places the camera along the preset direction (or the given one), as close as possible while the whole box stays
+ * in view.
+ */
+function frame(preset: ViewPreset, camera: THREE.PerspectiveCamera, direction?: THREE.Vector3) {
   const box = bounds(preset);
   const target = box.getCenter(new THREE.Vector3());
   target.y = Math.min(target.y, 1.1);
-  const dir = new THREE.Vector3(...DIRECTIONS[preset]).normalize();
+  const dir = (direction?.clone() ?? new THREE.Vector3(...DIRECTIONS[preset])).normalize();
   const corners = [0, 1, 2, 3, 4, 5, 6, 7].map(
     (i) => new THREE.Vector3(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z),
   );
@@ -88,6 +91,19 @@ function CameraRig() {
     controls.update();
     // Re-frame on resize only for the first view; later resizes keep the user's camera.
   }, [view.nonce, view.preset, controls, camera, view.nonce === 0 ? size.width : 0, view.nonce === 0 ? size.height : 0]);
+
+  // Towing on or off, another trailer type or another setup changes what is in the scene: re-centre the orbit on
+  // it, keeping the angle the user is looking from.
+  const sceneKey = `${useStore((s) => s.activeId)}|${useActive((s) => (s.towing ? s.caravan.kind : 'none'))}`;
+  const framedKey = useRef(sceneKey);
+  useEffect(() => {
+    if (!controls || framedKey.current === sceneKey) return;
+    framedKey.current = sceneKey;
+    const { target, position } = frame(view.preset, camera, camera.position.clone().sub(controls.target));
+    camera.position.copy(position);
+    controls.target.copy(target);
+    controls.update();
+  }, [sceneKey, controls, camera]);
   return null;
 }
 
