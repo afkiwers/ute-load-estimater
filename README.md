@@ -15,6 +15,8 @@ Plan and check the loading of a ute and the caravan it tows. Enter your weighbri
 - **Online:** open [afkiwers.github.io/ute-load-estimater](https://afkiwers.github.io/ute-load-estimater/). It always runs the latest release.
 - **Offline:** download [`ute-load-estimator.html` from the latest release](https://github.com/afkiwers/ute-load-estimater/releases/latest/download/ute-load-estimator.html) and double-click it. It opens in Chrome straight from disk: no web server, no install, no internet needed (only the update check in the About box goes online). The current development version is in the repo root ([`ute-load-estimator.html`](ute-load-estimator.html), "Download raw file").
 
+To give someone a copy of a setup, press **Share**: on a phone it opens the share sheet (Messages, WhatsApp, email, AirDrop), elsewhere it copies a link. The setup travels inside the link itself, nothing is uploaded, and opening the link offers to add it as a new setup next to the recipient's own.
+
 Your setups are saved in the browser automatically. The online page and a downloaded file keep separate lists, so use **Export** to keep a backup file or move setups to another computer or between the two, and **Import** to load one.
 
 ## What it does

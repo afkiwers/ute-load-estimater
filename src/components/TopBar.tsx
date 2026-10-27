@@ -4,6 +4,8 @@ import { BUILD, versionLabel } from '../build';
 import { useStore } from '../state/store';
 import { sceneBridge, useUi } from '../state/ui';
 import { AboutDialog } from './AboutDialog';
+import { ShareIcon } from './clipboard';
+import { ShareDialog } from './ShareDialog';
 
 function download(name: string, text: string) {
   const blob = new Blob([text], { type: 'application/json' });
@@ -41,6 +43,7 @@ export function TopBar() {
   const canRedo = useStore((s) => s.history.future.length > 0);
   const fileRef = useRef<HTMLInputElement>(null);
   const [about, setAbout] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const paletteOpen = useUi((s) => s.paletteOpen);
   const active = setups[activeId];
 
@@ -93,6 +96,9 @@ export function TopBar() {
           Redo
         </button>
         <span className="spacer" />
+        <button className="tb-btn tb-share" onClick={() => setSharing(true)} title="Send this setup to someone as a link">
+          <ShareIcon /> Share
+        </button>
         <button
           className="tb-btn"
           title="Save all setups to a file"
@@ -131,6 +137,7 @@ export function TopBar() {
         {versionLabel(BUILD)}
       </button>
       {about && <AboutDialog onClose={() => setAbout(false)} />}
+      {sharing && <ShareDialog onClose={() => setSharing(false)} />}
     </header>
   );
 }

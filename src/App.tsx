@@ -1,5 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { overallStatus } from './model/calc';
+import type { Setup } from './model/types';
+import { decodeSetup, sharePayload } from './share';
 import { useStore } from './state/store';
 import { useResult } from './state/result';
 import { NARROW, paletteDefault, useUi, type Tab } from './state/ui';
@@ -12,6 +14,7 @@ import { TowingPanel } from './components/TowingPanel';
 import { ItemsPanel } from './components/ItemsPanel';
 import { Report } from './components/Report';
 import { deleteItem, duplicateItem } from './components/Inspector';
+import { SharedSetupDialog } from './components/ShareDialog';
 
 const DOT: Record<string, string> = {
   ok: 'var(--ok)',
@@ -107,10 +110,34 @@ function usePaletteFollowsWidth() {
   }, []);
 }
 
+/** A setup opened from a share link ("#s=..."). The link is taken out of the address so a reload doesn't ask again. */
+function useSharedSetup(): [Setup | null, () => void] {
+  const [shared, setShared] = useState<Setup | null>(null);
+  useEffect(() => {
+    const check = () => {
+      const payload = sharePayload(location.hash);
+      if (!payload) return;
+      try {
+        history.replaceState(null, '', location.pathname + location.search);
+      } catch {
+        location.hash = '';
+      }
+      decodeSetup(payload).then(setShared, () =>
+        useUi.getState().showToast("This share link is incomplete or damaged, so there's nothing to add. Ask for it again."),
+      );
+    };
+    check();
+    window.addEventListener('hashchange', check);
+    return () => window.removeEventListener('hashchange', check);
+  }, []);
+  return [shared, () => setShared(null)];
+}
+
 export function App() {
   useShortcuts();
   usePaletteFollowsWidth();
   const paletteOpen = useUi((s) => s.paletteOpen);
+  const [shared, closeShared] = useSharedSetup();
   return (
     <div className="app">
       <TopBar />
@@ -122,6 +149,7 @@ export function App() {
       </main>
       <Toast />
       <Report />
+      {shared && <SharedSetupDialog setup={shared} onClose={closeShared} />}
     </div>
   );
 }
