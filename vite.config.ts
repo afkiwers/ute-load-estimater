@@ -7,7 +7,7 @@ import { viteSingleFile } from 'vite-plugin-singlefile';
 // The build inlines all JS and CSS into one HTML file so the tool can be
 // opened straight from disk (file://) in Chrome without a web server.
 // That file is also copied to the repo root so it can be downloaded directly.
-const RELEASE_FILE = 'ute-load-estimator.html';
+const RELEASE_FILE = 'vehicle-load-estimator.html';
 
 const copyRelease = (): Plugin => ({
   name: 'copy-release-file',

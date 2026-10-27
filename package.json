@@ -1,5 +1,5 @@
 {
-  "name": "ute-load-estimator",
+  "name": "vehicle-load-estimator",
   "private": true,
   "version": "0.1.0",
   "license": "GPL-3.0-or-later",
@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "check:release": "git diff --exit-code -- ute-load-estimator.html"
+    "check:release": "git diff --exit-code -- vehicle-load-estimator.html"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",

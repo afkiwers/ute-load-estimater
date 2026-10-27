@@ -1,7 +1,7 @@
 name: Release
 
 # Publishing a release on GitHub builds the single-file app from the tagged
-# commit, attaches it to the release as ute-load-estimator.html and publishes
+# commit, attaches it to the release as vehicle-load-estimator.html and publishes
 # it to GitHub Pages as the gh-pages branch, served from its root.
 
 on:
@@ -31,11 +31,14 @@ jobs:
           export APP_COMMIT_DATE="$(git log -1 --format=%cI)"
           export APP_BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           npm run build
-      - name: Attach ute-load-estimator.html to the release
+      - name: Attach vehicle-load-estimator.html to the release
+        # Also under the app's old name, so download links from before the rename keep working.
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.event.release.tag_name }}
-        run: gh release upload "$TAG" ute-load-estimator.html --clobber --repo "$GITHUB_REPOSITORY"
+        run: |
+          cp vehicle-load-estimator.html ute-load-estimator.html
+          gh release upload "$TAG" vehicle-load-estimator.html ute-load-estimator.html --clobber --repo "$GITHUB_REPOSITORY"
       - name: Publish to GitHub Pages
         # The gh-pages branch holds only the latest release, as a single commit.
         env:
@@ -43,7 +46,7 @@ jobs:
           TAG: ${{ github.event.release.tag_name }}
         run: |
           mkdir site
-          cp ute-load-estimator.html site/index.html
+          cp vehicle-load-estimator.html site/index.html
           touch site/.nojekyll
           cd site
           git init -q -b gh-pages

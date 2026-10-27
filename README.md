@@ -8,12 +8,12 @@
 
 Plan and check the loading of a ute or SUV and the caravan it tows. Enter your weighbridge readings and the manufacturer limits, drag accessories and gear onto a 3D model, and see the axle, wheel, tow ball and combination loads update against every limit.
 
-**[Open it in your browser](https://afkiwers.github.io/ute-load-estimater/)**, or **[download ute-load-estimator.html](https://github.com/afkiwers/ute-load-estimater/releases/latest/download/ute-load-estimator.html)** to use it offline ([release notes](https://github.com/afkiwers/ute-load-estimater/releases/latest))
+**[Open it in your browser](https://afkiwers.github.io/ute-load-estimater/)**, or **[download vehicle-load-estimator.html](https://github.com/afkiwers/ute-load-estimater/releases/latest/download/vehicle-load-estimator.html)** to use it offline ([release notes](https://github.com/afkiwers/ute-load-estimater/releases/latest))
 
 ## Use it
 
 - **Online:** open [afkiwers.github.io/ute-load-estimater](https://afkiwers.github.io/ute-load-estimater/). It always runs the latest release.
-- **Offline:** download [`ute-load-estimator.html` from the latest release](https://github.com/afkiwers/ute-load-estimater/releases/latest/download/ute-load-estimator.html) and double-click it. It opens in Chrome straight from disk: no web server, no install, no internet needed (only the update check in the About box goes online). The current development version is in the repo root ([`ute-load-estimator.html`](ute-load-estimator.html), "Download raw file").
+- **Offline:** download [`vehicle-load-estimator.html` from the latest release](https://github.com/afkiwers/ute-load-estimater/releases/latest/download/vehicle-load-estimator.html) and double-click it. It opens in Chrome straight from disk: no web server, no install, no internet needed (only the update check in the About box goes online). The current development version is in the repo root ([`vehicle-load-estimator.html`](vehicle-load-estimator.html), "Download raw file").
 
 To give someone a copy of a setup, press **Share**: on a phone it opens the share sheet (Messages, WhatsApp, email, AirDrop), elsewhere it copies a link. The setup travels inside the link itself, nothing is uploaded, and opening the link offers to add it as a new setup next to the recipient's own.
 
@@ -76,12 +76,12 @@ Needs Node 20 or newer.
 npm install
 npm run dev      # local dev server with hot reload
 npm test         # unit tests for the load model
-npm run build    # typecheck, then build ute-load-estimator.html
+npm run build    # typecheck, then build vehicle-load-estimator.html
 ```
 
-The build inlines everything (React, three.js, styles) into one HTML file so it runs from `file://`. It is written to `dist/index.html` and copied to `ute-load-estimator.html` at the repo root. CI checks that the committed file matches the source, so run `npm run build` and commit the result after changing the code.
+The build inlines everything (React, three.js, styles) into one HTML file so it runs from `file://`. It is written to `dist/index.html` and copied to `vehicle-load-estimator.html` at the repo root. CI checks that the committed file matches the source, so run `npm run build` and commit the result after changing the code.
 
-To release, publish a release on GitHub (Releases, "Draft a new release", pick or create a tag, Publish). The Release workflow builds the file from the tagged commit, runs the tests, attaches `ute-load-estimator.html` to the release and publishes it to GitHub Pages; the download link and the online page above always serve the newest release. The online page is the `gh-pages` branch, which the workflow replaces on every release. One-time setup, after the first release that runs it: Settings, Pages, Source "Deploy from a branch", branch `gh-pages`, folder `/ (root)`.
+To release, publish a release on GitHub (Releases, "Draft a new release", pick or create a tag, Publish). The Release workflow builds the file from the tagged commit, runs the tests, attaches `vehicle-load-estimator.html` to the release and publishes it to GitHub Pages; the download link and the online page above always serve the newest release. Each release also carries the file under its old name, `ute-load-estimator.html`, so download links from before the rename keep working. The online page is the `gh-pages` branch, which the workflow replaces on every release. One-time setup, after the first release that runs it: Settings, Pages, Source "Deploy from a branch", branch `gh-pages`, folder `/ (root)`.
 
 Code map:
 
