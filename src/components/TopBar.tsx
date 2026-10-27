@@ -1,0 +1,114 @@
+import { useRef } from 'react';
+import type { Setup } from '../model/types';
+import { useStore } from '../state/store';
+import { sceneBridge, useUi } from '../state/ui';
+
+function download(name: string, text: string) {
+  const blob = new Blob([text], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function parseImport(text: string): Setup[] {
+  const data = JSON.parse(text);
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.setups)) return data.setups;
+  if (data?.ute && data?.items) return [data];
+  throw new Error('Not an export from this tool.');
+}
+
+export function printReport() {
+  const ui = useUi.getState();
+  ui.select(null);
+  // Let the deselect render before grabbing the 3D view.
+  requestAnimationFrame(() => {
+    ui.setSnapshot(sceneBridge.current?.snapshot() ?? '');
+    setTimeout(() => window.print(), 150);
+  });
+}
+
+export function TopBar() {
+  const { setups, order, activeId, selectSetup, createSetup, duplicateSetup, renameSetup, deleteSetup, importSetups, undo, redo } = useStore();
+  const canUndo = useStore((s) => s.history.past.length > 0);
+  const canRedo = useStore((s) => s.history.future.length > 0);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const active = setups[activeId];
+
+  return (
+    <header className="topbar">
+      <div className="brand">
+        <span className="brand-mark">U</span>
+        Ute Load Estimator
+      </div>
+      <select value={activeId} onChange={(e) => selectSetup(e.target.value)} aria-label="Setup">
+        {order.map((id) => (
+          <option key={id} value={id}>
+            {setups[id].name}
+          </option>
+        ))}
+      </select>
+      <input className="name" value={active.name} onChange={(e) => renameSetup(e.target.value)} aria-label="Setup name" />
+      <button className="tb-btn" onClick={() => createSetup()} title="New setup from the preset">
+        New
+      </button>
+      <button className="tb-btn" onClick={duplicateSetup} title="Copy this setup, e.g. to compare loading plans">
+        Duplicate
+      </button>
+      <button
+        className="tb-btn"
+        onClick={() => {
+          if (confirm(`Delete the setup "${active.name}"?`)) deleteSetup();
+        }}
+      >
+        Delete
+      </button>
+      <span className="tb-sep" />
+      <button className="tb-btn" onClick={undo} disabled={!canUndo} title="Undo (Ctrl+Z)">
+        Undo
+      </button>
+      <button className="tb-btn" onClick={redo} disabled={!canRedo} title="Redo (Ctrl+Shift+Z)">
+        Redo
+      </button>
+      <span className="spacer" />
+      <button
+        className="tb-btn"
+        title="Save all setups to a file"
+        onClick={() => {
+          const data = { app: 'ute-load-estimator', version: 1, exportedAt: new Date().toISOString(), setups: order.map((id) => setups[id]) };
+          download(`ute-load-setups-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(data, null, 2));
+        }}
+      >
+        Export
+      </button>
+      <button className="tb-btn" onClick={() => fileRef.current?.click()} title="Load setups from an exported file">
+        Import
+      </button>
+      <input
+        ref={fileRef}
+        type="file"
+        accept="application/json,.json"
+        hidden
+        onChange={async (e) => {
+          const file = e.target.files?.[0];
+          e.target.value = '';
+          if (!file) return;
+          try {
+            const n = importSetups(parseImport(await file.text()));
+            useUi.getState().showToast(`Imported ${n} setup${n === 1 ? '' : 's'}.`);
+          } catch (err) {
+            useUi.getState().showToast(`Import failed: ${(err as Error).message}`);
+          }
+        }}
+      />
+      <button className="tb-btn primary" onClick={printReport} title="Printable summary (save as PDF from the print dialog)">
+        Report
+      </button>
+    </header>
+  );
+}

@@ -1,0 +1,297 @@
+import { describe, expect, it } from 'vitest';
+import {
+  capacityAt,
+  caravanShare,
+  compute,
+  deriveCaravanBaseline,
+  deriveUteBaseline,
+  uteShare,
+} from './calc';
+import { ITEM_TEMPLATES, itemFromTemplate, newSetup, defaultSettings, emptyCaravanReadings, emptyUteReadings } from './presets';
+import type { LoadItem, Setup } from './types';
+import { loadIndexKg, tyreDiameter } from './tyres';
+
+const settings = defaultSettings();
+
+function bareSetup(): Setup {
+  const s = newSetup('test');
+  s.items = [];
+  s.towing = false;
+  s.uteReadings = { total: null, front: 1400, rear: 1100, fl: 700, fr: 700, rl: 550, rr: 550 };
+  return s;
+}
+
+function item(partial: Partial<LoadItem>): LoadItem {
+  return {
+    id: Math.random().toString(36),
+    name: 'item',
+    mass: 100,
+    size: { l: 100, w: 100, h: 100 },
+    shape: 'box',
+    color: '#000',
+    host: 'ute',
+    pos: { x: 0, y: 0, z: 500 },
+    enabled: true,
+    measured: null,
+    ...partial,
+  };
+}
+
+const sum = (w: { fl: number; fr: number; rl: number; rr: number }) => w.fl + w.fr + w.rl + w.rr;
+
+describe('tyres', () => {
+  it('maps load index to kg', () => {
+    expect(loadIndexKg(109)).toBe(1030);
+    expect(loadIndexKg(121)).toBe(1450);
+    expect(loadIndexKg(null)).toBeNull();
+  });
+  it('computes overall diameter', () => {
+    expect(tyreDiameter('265/55R19')).toBe(774);
+    expect(tyreDiameter('LT265/75R16')).toBe(804);
+    expect(tyreDiameter('33x12.5R15')).toBe(838);
+  });
+});
+
+describe('uteShare', () => {
+  const ute = newSetup().ute;
+  const L = ute.wheelbase;
+  it('puts a load on the front axle entirely on the front wheels', () => {
+    const w = uteShare(100, { x: 0, y: 0, z: 0 }, ute);
+    expect(w.fl + w.fr).toBeCloseTo(100);
+    expect(w.rl + w.rr).toBeCloseTo(0);
+  });
+  it('levers a load ahead of the front axle off the rear axle', () => {
+    const w = uteShare(40, { x: -1000, y: 0, z: 0 }, ute);
+    expect(w.fl + w.fr).toBeCloseTo(40 * (1 + 1000 / L));
+    expect(w.rl + w.rr).toBeCloseTo(-40 * (1000 / L));
+    expect(sum(w)).toBeCloseTo(40);
+  });
+  it('splits laterally over the track', () => {
+    const w = uteShare(100, { x: L, y: ute.trackRear / 2, z: 0 }, ute);
+    expect(w.rr).toBeCloseTo(100);
+    expect(w.rl).toBeCloseTo(0);
+  });
+});
+
+describe('caravanShare', () => {
+  const cv = newSetup().caravan;
+  it('splits between ball and axle by lever', () => {
+    expect(caravanShare(100, { x: 0, y: 0, z: 0 }, cv).ball).toBeCloseTo(100);
+    const over = caravanShare(100, { x: cv.couplingToAxle, y: 0, z: 0 }, cv);
+    expect(over.ball).toBeCloseTo(0);
+    expect(over.left + over.right).toBeCloseTo(100);
+  });
+  it('lightens the ball when loaded behind the axle', () => {
+    const behind = caravanShare(50, { x: cv.couplingToAxle + 2000, y: 0, z: 0 }, cv);
+    expect(behind.ball).toBeLessThan(0);
+    expect(behind.ball + behind.left + behind.right).toBeCloseTo(50);
+  });
+});
+
+describe('deriveUteBaseline', () => {
+  const ute = newSetup().ute;
+  it('uses wheel readings when all four are given', () => {
+    const b = deriveUteBaseline({ total: 2600, front: 1450, rear: 1150, fl: 720, fr: 730, rl: 570, rr: 580 }, ute, settings);
+    expect(b.source).toBe('wheels');
+    expect(sum(b.wheels)).toBe(2600);
+    expect(b.issues.filter((i) => i.level !== 'info')).toHaveLength(0);
+  });
+  it('flags wheels that do not add up to the axle reading', () => {
+    const b = deriveUteBaseline({ total: null, front: 1450, rear: null, fl: 720, fr: 800, rl: null, rr: null }, ute, settings);
+    expect(b.issues.some((i) => i.message.startsWith('Front wheels'))).toBe(true);
+  });
+  it('accepts differences within tolerance', () => {
+    const b = deriveUteBaseline({ total: 2610, front: 1450, rear: 1150, fl: null, fr: null, rl: null, rr: null }, ute, settings);
+    expect(b.issues.some((i) => i.message.includes('vs total'))).toBe(false);
+  });
+  it('splits axle readings 50/50 and reports the derived wheels', () => {
+    const b = deriveUteBaseline({ total: null, front: 1400, rear: 1200, fl: null, fr: null, rl: null, rr: null }, ute, settings);
+    expect(b.source).toBe('axles');
+    expect(b.wheels.fl).toBe(700);
+    expect(b.derived.rr).toBe(600);
+    expect(b.derived.total).toBe(2600);
+  });
+  it('shows axle loads derived from the wheels', () => {
+    const b = deriveUteBaseline({ total: null, front: null, rear: null, fl: 700, fr: 720, rl: 560, rr: 570 }, ute, settings);
+    expect(b.derived.front).toBe(1420);
+    expect(b.derived.rear).toBe(1130);
+    expect(b.derived.total).toBe(2550);
+  });
+  it('derives the other wheel from one wheel and the axle', () => {
+    const b = deriveUteBaseline({ total: null, front: 1400, rear: 1200, fl: 680, fr: null, rl: null, rr: null }, ute, settings);
+    expect(b.wheels.fr).toBe(720);
+    expect(b.derived.fr).toBe(720);
+  });
+  it('derives an axle from the total', () => {
+    const b = deriveUteBaseline({ total: 2600, front: null, rear: 1150, fl: null, fr: null, rl: null, rr: null }, ute, settings);
+    expect(b.wheels.fl + b.wheels.fr).toBe(1450);
+    expect(b.derived.front).toBe(1450);
+  });
+  it('falls back to the kerb weight when nothing is measured', () => {
+    const b = deriveUteBaseline(emptyUteReadings(), ute, settings);
+    expect(b.source).toBe('spec');
+    expect(sum(b.wheels)).toBeCloseTo(ute.limits.kerb!);
+    expect(b.wheels.fl + b.wheels.fr).toBeCloseTo((ute.limits.kerb! * ute.kerbFrontPct) / 100);
+  });
+  it('rejects non-positive readings', () => {
+    const b = deriveUteBaseline({ ...emptyUteReadings(), front: 0, rear: 1200, total: 2600 }, ute, settings);
+    expect(b.issues.some((i) => i.level === 'error')).toBe(true);
+  });
+});
+
+describe('deriveCaravanBaseline', () => {
+  const cv = newSetup().caravan;
+  it('derives the axle group from total and ball', () => {
+    const b = deriveCaravanBaseline({ ...emptyCaravanReadings(), total: 2600, ball: 250 }, cv, settings);
+    expect(b.source).toBe('measured');
+    expect(b.loads.left + b.loads.right).toBe(2350);
+  });
+  it('flags ball + axle that do not add up to the total', () => {
+    const b = deriveCaravanBaseline({ ...emptyCaravanReadings(), total: 2600, ball: 250, axle: 2500 }, cv, settings);
+    expect(b.issues.some((i) => i.message.startsWith('Ball weight + axle group'))).toBe(true);
+  });
+  it('falls back to the plate when not weighed', () => {
+    const b = deriveCaravanBaseline(emptyCaravanReadings(), cv, settings);
+    expect(b.source).toBe('spec');
+    expect(b.loads.ball).toBe(cv.limits.tareBall);
+  });
+});
+
+describe('compute', () => {
+  it('adds what-if items to the measured baseline', () => {
+    const s = bareSetup();
+    s.items = [item({ mass: 40, pos: { x: -1000, y: 0, z: 600 } })];
+    const r = compute(s);
+    expect(r.ute.gross).toBeCloseTo(2540);
+    expect(r.ute.front).toBeGreaterThan(1440);
+    expect(r.ute.rear).toBeLessThan(1100);
+  });
+
+  it('does not double count an item that was on the vehicle when weighed', () => {
+    const s = bareSetup();
+    const pos = { x: 3800, y: 0, z: 1000 };
+    s.items = [item({ mass: 60, pos, measured: { host: 'ute', pos } })];
+    const r = compute(s);
+    expect(r.ute.gross).toBeCloseTo(2500);
+    expect(r.ute.front).toBeCloseTo(1400);
+  });
+
+  it('applies only the difference when a weighed item is moved', () => {
+    const s = bareSetup();
+    s.items = [item({ mass: 60, pos: { x: 0, y: 0, z: 1000 }, measured: { host: 'ute', pos: { x: 3350, y: 0, z: 1000 } } })];
+    const r = compute(s);
+    expect(r.ute.gross).toBeCloseTo(2500);
+    expect(r.ute.front).toBeCloseTo(1460);
+    expect(r.ute.rear).toBeCloseTo(1040);
+  });
+
+  it('removes a weighed item that is switched off', () => {
+    const s = bareSetup();
+    const pos = { x: 0, y: 0, z: 1000 };
+    s.items = [item({ mass: 75, pos, measured: { host: 'ute', pos }, enabled: false })];
+    expect(compute(s).ute.front).toBeCloseTo(1325);
+  });
+
+  it('applies the tow ball lever to both axles', () => {
+    const s = bareSetup();
+    s.towing = true;
+    s.caravanReadings = { ...emptyCaravanReadings(), total: 2600, ball: 260 };
+    const r = compute(s);
+    const L = s.ute.wheelbase;
+    const d = s.hitch.ballOffset;
+    expect(r.ute.front).toBeCloseTo(1400 - (260 * d) / L);
+    expect(r.ute.rear).toBeCloseTo(1100 + (260 * (L + d)) / L);
+    expect(r.ute.gross).toBeCloseTo(2760);
+    expect(r.caravan!.mass).toBeCloseTo(2600);
+    expect(r.checks.find((c) => c.id === 'gcm')!.value).toBeCloseTo(2500 + 2600);
+  });
+
+  it('restores the requested share of the front axle with a WDH', () => {
+    const s = bareSetup();
+    s.towing = true;
+    s.caravanReadings = { ...emptyCaravanReadings(), total: 2600, ball: 260 };
+    const lost = (260 * s.hitch.ballOffset) / s.ute.wheelbase;
+
+    s.hitch.wdh = { enabled: true, restorePct: 50 };
+    let r = compute(s);
+    expect(r.ute.front).toBeCloseTo(1400 - lost / 2);
+    // Whatever leaves the ute ends up on the caravan axles; the totals are unchanged.
+    expect(r.ute.gross + r.caravan!.axle).toBeCloseTo(2500 + 2600);
+    expect(r.hitch!.wdhToCaravan).toBeGreaterThan(0);
+
+    s.hitch.wdh = { enabled: true, restorePct: 100 };
+    r = compute(s);
+    expect(r.ute.front).toBeCloseTo(1400);
+  });
+
+  it('moves the ball weight with caravan items', () => {
+    const s = bareSetup();
+    s.towing = true;
+    s.caravanReadings = { ...emptyCaravanReadings(), total: 2600, ball: 260 };
+    s.items = [item({ host: 'caravan', mass: 38, pos: { x: 900, y: 0, z: 600 } })];
+    const r = compute(s);
+    const a = s.caravan.couplingToAxle;
+    expect(r.hitch!.ball).toBeCloseTo(260 + 38 * (1 - 900 / a));
+  });
+
+  it('ignores caravan items when not towing', () => {
+    const s = bareSetup();
+    s.items = [item({ host: 'caravan', mass: 100, pos: { x: 900, y: 0, z: 600 } })];
+    const r = compute(s);
+    expect(r.ute.gross).toBeCloseTo(2500);
+    expect(r.issues.some((i) => i.message.includes('ignored'))).toBe(true);
+  });
+
+  it('flags limits that are exceeded or close', () => {
+    const s = bareSetup();
+    s.ute.limits.frontAxle = 1420;
+    s.ute.limits.rearAxle = 1000;
+    const r = compute(s);
+    expect(r.checks.find((c) => c.id === 'frontAxle')!.status).toBe('near');
+    expect(r.checks.find((c) => c.id === 'rearAxle')!.status).toBe('over');
+    expect(r.checks.find((c) => c.id === 'gvm')!.status).toBe('ok');
+  });
+
+  it('checks each wheel against the tyre load index', () => {
+    const s = bareSetup();
+    s.ute.tyre.loadIndex = 100; // 800 kg
+    s.uteReadings = { ...s.uteReadings, fl: 820, fr: 580 };
+    const r = compute(s);
+    expect(r.checks.find((c) => c.id === 'tyre_fl')!.status).toBe('over');
+    expect(r.checks.find((c) => c.id === 'tyre_fr')!.status).toBe('ok');
+  });
+});
+
+describe('capacityAt', () => {
+  it('finds the first limit reached at a position', () => {
+    const s = bareSetup();
+    s.ute.limits.gvm = 3000;
+    s.ute.limits.rearAxle = 1300;
+    s.ute.limits.frontAxle = 2000;
+    s.ute.tyre.loadIndex = null;
+    s.ute.limits.payload = null;
+    // Over the rear axle every kg lands on the rear axle: 200 kg of room.
+    const atRear = capacityAt(s, 'ute', { x: s.ute.wheelbase, y: 0, z: 0 });
+    expect(atRear.kg).toBeCloseTo(200);
+    expect(atRear.limitedBy).toBe('Rear axle');
+    // Midway, half goes to the rear: 400 kg of rear-axle room but only 500 kg of GVM.
+    const mid = capacityAt(s, 'ute', { x: s.ute.wheelbase / 2, y: 0, z: 0 });
+    expect(mid.kg).toBeCloseTo(400);
+  });
+});
+
+describe('itemFromTemplate', () => {
+  it('stacks items added to the same spot', () => {
+    const s = newSetup();
+    const rack = itemFromTemplate(ITEM_TEMPLATES.find((t) => t.id === 'roofRack')!, s);
+    s.items.push(rack);
+    const tent = itemFromTemplate(ITEM_TEMPLATES.find((t) => t.id === 'rtt')!, s);
+    expect(tent.pos.z - tent.size.h / 2).toBeCloseTo(rack.pos.z + rack.size.h / 2);
+  });
+  it('fills free seats first', () => {
+    const s = newSetup();
+    const passenger = itemFromTemplate(ITEM_TEMPLATES.find((t) => t.id === 'passenger')!, s);
+    expect(passenger.pos.y).toBeLessThan(0);
+    expect(Math.abs(passenger.pos.x - s.items[0].pos.x)).toBeLessThan(1);
+  });
+});

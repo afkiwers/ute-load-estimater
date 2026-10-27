@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - name: Committed ute-load-estimator.html matches the source
+        run: |
+          if ! npm run --silent check:release; then
+            echo "::error::ute-load-estimator.html is out of date. Run 'npm run build' and commit it."
+            exit 1
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ute-load-estimator
+          path: ute-load-estimator.html
