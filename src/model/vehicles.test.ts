@@ -101,4 +101,19 @@ describe('vehicle models', () => {
     applyVehicle(s, 'dmax-lsu-30d');
     expect(s.hitch.ballOffset).toBe(1240);
   });
+
+  it('offers a generic ute and car for other makes, every figure a placeholder', () => {
+    const s = newSetup();
+    applyVehicle(s, 'generic-car');
+    expect(s.ute).toMatchObject({ name: 'Generic car (5-seat SUV)', bodyStyle: 'suv' });
+    expect(s.placeholders).toEqual(expect.arrayContaining(['ute.wheelbase', 'ute.trackFront', 'ute.limits.gvm', 'ute.limits.brakedTow', 'ute.tyre.size', 'ute.tub.length']));
+    // Named after the owner's vehicle, which a reset keeps.
+    s.ute.name = 'Toyota Prado GXL';
+    s.ute.limits.gvm = 3000;
+    applyVehicle(s, 'generic-car');
+    expect(s.ute).toMatchObject({ name: 'Toyota Prado GXL' });
+    expect(s.ute.limits.gvm).toBe(2750);
+    applyVehicle(s, 'generic-ute');
+    expect(s.ute).toMatchObject({ name: 'Generic dual cab ute', bodyStyle: 'ute' });
+  });
 });

@@ -1,5 +1,5 @@
 // Dual-cab utes and SUVs as sold in Australia: the GWM Cannon and Cannon Alpha, the
-// Isuzu D-MAX and the Isuzu MU-X.
+// Isuzu D-MAX and the Isuzu MU-X, plus a generic ute and car for any other make.
 //
 // The current GWM range comes from GWM Australia's brochures (Cannon Alpha, current at
 // 14/10/2026; Cannon, 16/10/2026). Earlier GWM models are no longer in a brochure; their
@@ -12,7 +12,7 @@
 
 import type { UteLimits, UteSpec } from './types';
 
-export type VehicleGroup = 'GWM Cannon Alpha' | 'GWM Cannon' | 'Earlier GWM models' | 'Isuzu D-MAX' | 'Isuzu MU-X';
+export type VehicleGroup = 'GWM Cannon Alpha' | 'GWM Cannon' | 'Earlier GWM models' | 'Isuzu D-MAX' | 'Isuzu MU-X' | 'Other makes';
 
 export interface VehicleModel {
   id: string;
@@ -30,10 +30,17 @@ export const DEFAULT_VEHICLE = 'alpha-vanta-30d';
 const UNPUBLISHED = {
   GWM: ['ute.trackFront', 'ute.trackRear', 'ute.frontOverhang', 'ute.tub.floorHeight'],
   Isuzu: ['ute.tub.floorHeight', 'ute.kerbFrontPct'],
+  Generic: [],
 };
 const TUB = ['ute.tub.length', 'ute.tub.width', 'ute.tub.depth'];
 const OVERALL = ['ute.overallLength', 'ute.overallWidth', 'ute.overallHeight'];
 const AXLES = ['ute.limits.frontAxle', 'ute.limits.rearAxle'];
+const LIMITS = ['gvm', 'gcm', 'frontAxle', 'rearAxle', 'kerb', 'tare', 'payload', 'brakedTow', 'unbrakedTow', 'towBallMax'].map((k) => `ute.limits.${k}`);
+/** Every figure: the generic vehicles have no published ones. */
+const EVERYTHING = ['ute.wheelbase', 'ute.trackFront', 'ute.trackRear', ...OVERALL, 'ute.frontOverhang', ...TUB, 'ute.tub.floorHeight', 'ute.kerbFrontPct', 'ute.tyre.size', 'ute.tyre.loadIndex', ...LIMITS];
+
+const makeOf = (group: VehicleGroup): keyof typeof UNPUBLISHED =>
+  group.startsWith('Isuzu') ? 'Isuzu' : group === 'Other makes' ? 'Generic' : 'GWM';
 
 type Body = Pick<
   UteSpec,
@@ -444,7 +451,52 @@ const ISUZU: Def[] = [
   mux('mux-xterrain-30d', 'X-TERRAIN 3.0L diesel', '4x4', 2195, {}, R20),
 ];
 
-export const VEHICLES: VehicleModel[] = [...DEFS, ...ISUZU].map((d) => ({
+// For any other make: round figures typical of a mid-size 4x4 diesel dual cab ute (Hilux, Ranger,
+// BT-50, Triton class) and of a large five-seat SUV that tows, all placeholders for the placard's.
+const GENERIC: Def[] = [
+  {
+    id: 'generic-ute',
+    group: 'Other makes',
+    name: 'Generic dual cab ute',
+    body: {
+      bodyStyle: 'ute',
+      wheelbase: 3220,
+      trackFront: 1600,
+      trackRear: 1600,
+      overallLength: 5350,
+      overallWidth: 1900,
+      overallHeight: 1850,
+      frontOverhang: 920,
+      tub: { length: 1550, width: 1530, depth: 500, floorHeight: 850 },
+      kerbFrontPct: 57,
+    },
+    limits: { gvm: 3200, gcm: 6000, frontAxle: 1500, rearAxle: 1950, kerb: 2200, tare: 2140, payload: 1000, brakedTow: 3500, unbrakedTow: 750, towBallMax: 350 },
+    tyre: { size: '265/65R17', loadIndex: 112 },
+    typical: EVERYTHING,
+  },
+  {
+    id: 'generic-car',
+    group: 'Other makes',
+    name: 'Generic car (5-seat SUV)',
+    body: {
+      bodyStyle: 'suv',
+      wheelbase: 2850,
+      trackFront: 1600,
+      trackRear: 1600,
+      overallLength: 4850,
+      overallWidth: 1900,
+      overallHeight: 1800,
+      frontOverhang: 900,
+      tub: { length: 1050, width: 1250, depth: 800, floorHeight: 800 },
+      kerbFrontPct: 53,
+    },
+    limits: { gvm: 2750, gcm: 5500, frontAxle: 1350, rearAxle: 1600, kerb: 2100, tare: 2040, payload: 650, brakedTow: 3000, unbrakedTow: 750, towBallMax: 300 },
+    tyre: { size: '265/60R18', loadIndex: 110 },
+    typical: EVERYTHING,
+  },
+];
+
+export const VEHICLES: VehicleModel[] = [...DEFS, ...ISUZU, ...GENERIC].map((d) => ({
   id: d.id,
   group: d.group,
   label: d.name.replace(/^(GWM|Isuzu) /, '') + (d.years ? ` (${d.years})` : ''),
@@ -456,10 +508,10 @@ export const VEHICLES: VehicleModel[] = [...DEFS, ...ISUZU].map((d) => ({
     limits: { ...d.limits },
     sunroof: !!d.sunroof,
   }),
-  placeholders: [...new Set([...UNPUBLISHED[d.group.startsWith('Isuzu') ? 'Isuzu' : 'GWM'], ...d.typical])],
+  placeholders: [...new Set([...UNPUBLISHED[makeOf(d.group)], ...d.typical])],
 }));
 
-export const VEHICLE_GROUPS: VehicleGroup[] = ['GWM Cannon Alpha', 'GWM Cannon', 'Earlier GWM models', 'Isuzu D-MAX', 'Isuzu MU-X'];
+export const VEHICLE_GROUPS: VehicleGroup[] = ['GWM Cannon Alpha', 'GWM Cannon', 'Earlier GWM models', 'Isuzu D-MAX', 'Isuzu MU-X', 'Other makes'];
 
 export function vehicleModel(id: string): VehicleModel {
   return VEHICLES.find((v) => v.id === id) ?? VEHICLES.find((v) => v.id === DEFAULT_VEHICLE)!;

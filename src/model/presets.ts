@@ -29,10 +29,12 @@ export function vehicleSpec(id = DEFAULT_VEHICLE): UteSpec {
 /**
  * Switches the ute to another model: its published figures, with the typical ones
  * marked as placeholders. Paint, readings and items stay as they are, and so does a
- * tow ball position that has been measured.
+ * tow ball position that has been measured. Resetting to the same model keeps its name.
  */
 export function applyVehicle(setup: Setup, id: string) {
+  const name = setup.ute.model === id ? setup.ute.name : null;
   setup.ute = { ...vehicleModel(id).spec(), paint: setup.ute.paint };
+  if (name) setup.ute.name = name;
   setup.placeholders = [...setup.placeholders.filter((p) => !p.startsWith('ute.')), ...vehicleModel(id).placeholders];
   if (setup.placeholders.includes('hitch.ballOffset')) setup.hitch.ballOffset = typicalBallOffset(setup.ute);
 }

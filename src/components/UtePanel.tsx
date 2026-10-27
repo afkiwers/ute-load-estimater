@@ -12,7 +12,7 @@ const SOURCE_TEXT: Record<UteBaselineSource, string> = {
   wheels: 'Baseline: measured per wheel',
   axles: 'Baseline: measured per axle (missing wheels split 50/50)',
   partial: 'Baseline: partly estimated',
-  spec: 'Baseline: estimated from the published kerb weight',
+  spec: 'Baseline: estimated from the kerb weight',
 };
 
 function TopView({ suv }: { suv: boolean }) {
@@ -49,6 +49,7 @@ export function UtePanel() {
   const issues = base.issues;
   const tyreKg = loadIndexKg(setup.ute.tyre.loadIndex);
   const suv = setup.ute.bodyStyle === 'suv';
+  const generic = vehicleModel(setup.ute.model).group === 'Other makes';
 
   const reading = (key: keyof UteReadings, label: string) => (
     <div className="wb-cell" style={{ gridArea: key }}>
@@ -75,10 +76,16 @@ export function UtePanel() {
             </select>
           </span>
           <span className="field-hint">
-            Loads its published limits, tyres and dimensions. Readings, items and paint stay. Values marked placeholder are typical: check them
-            against your placard.
+            {generic
+              ? 'Typical figures for any other make, all marked placeholder: replace them with your placard, owner\'s manual and tow bar plate values below.'
+              : 'Loads its published limits, tyres and dimensions. Readings, items and paint stay. Values marked placeholder are typical: check them against your placard.'}
           </span>
         </label>
+        {generic && (
+          <div style={{ marginTop: 10 }}>
+            <TextField path="ute.name" label="Your vehicle" hint="For example Toyota Prado GXL. Shown when you share the setup." />
+          </div>
+        )}
       </Section>
 
       <Section title="Weighbridge readings" extra="unhitched">

@@ -10,7 +10,7 @@ import { Modal } from './Modal';
 
 /** What a setup holds, e.g. "Cannon Alpha Vanta 3.0L diesel towing a caravan, weighed, 4 items". */
 export function setupSummary(s: Setup): string {
-  const parts = [s.ute.name.replace(/^GWM /, '') + (s.towing ? ` towing a ${trailerName(s.caravan.kind)}` : '')];
+  const parts = [s.ute.name.replace(/^(GWM|Isuzu) /, '') + (s.towing ? ` towing a ${trailerName(s.caravan.kind)}` : '')];
   if (Object.values(s.uteReadings).some((v) => v != null)) parts.push('weighed');
   parts.push(`${s.items.length} item${s.items.length === 1 ? '' : 's'}`);
   return parts.join(', ');

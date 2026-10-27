@@ -379,7 +379,7 @@ export function deriveUteBaseline(r: UteReadings, ute: UteSpec, s: CheckSettings
       message:
         v.total != null
           ? `Only the total was measured, so the front/rear split assumes the kerb weight distribution (${pct(share * 100)} front). Weigh each axle for real numbers.`
-          : `Not weighed yet: using the published kerb weight (${kg(total)}) with an assumed ${pct(share * 100)} front split. Enter your weighbridge readings.`,
+          : `Not weighed yet: using the kerb weight (${kg(total)}) with an assumed ${pct(share * 100)} front split. Enter your weighbridge readings.`,
     });
   } else if (front == null || rear == null) {
     source = 'partial';
@@ -435,7 +435,7 @@ export function deriveUteBaseline(r: UteReadings, ute: UteSpec, s: CheckSettings
     } else if (!tare && kerb && gross < kerb * 0.95) {
       issues.push({
         level: 'warn',
-        message: `Measured ${kg(gross)} is less than the published kerb weight (${kg(kerb)}). Kerb weight includes a full tank; check the readings.`,
+        message: `Measured ${kg(gross)} is less than the kerb weight (${kg(kerb)}). Kerb weight includes a full tank; check the readings.`,
         fields: ['uteReadings.total'],
       });
     }

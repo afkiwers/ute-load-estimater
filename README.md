@@ -24,9 +24,9 @@ Your setups are saved in the browser automatically. The online page and a downlo
 **Weighbridge readings (Vehicle tab).** Enter whatever you measured: the four wheels, the two axles and/or the total. Missing values are derived and shown in grey, and every redundant reading is cross-checked:
 
 - FL + FR against the front axle, RL + RR against the rear axle, front + rear against the total (tolerance ±20 kg or ±2%, adjustable)
-- left/right imbalance over 10%, an unusual front/rear split, a total lighter than the published kerb weight, implausible values
+- left/right imbalance over 10%, an unusual front/rear split, a total lighter than the kerb weight, implausible values
 
-Until you have weighed, the published kerb weight is used with an assumed front/rear split, and the tool says so.
+Until you have weighed, the kerb weight under Manufacturer limits is used with an assumed front/rear split, and the tool says so.
 
 **Manufacturer limits.** GVM, GCM, front and rear axle, kerb, tare, payload, braked and unbraked towing, max tow ball download, tyre load index. Every check shows the value, the limit, the spare capacity and turns amber near (95%, adjustable) or red over the limit, in the results panel, the gauge strip and on the 3D labels.
 
@@ -59,6 +59,9 @@ Pick your vehicle under **Make and model** at the top of the Vehicle tab. The de
 - **Earlier GWM models:** Cannon Alpha Ultra and Lux 2.4L diesel (2024–2026) and Ultra Hybrid (2024–2025), Cannon Vanta 2.0L diesel (2023–2024), Cannon-X and Cannon-L 2.0L diesel (2021–2024)
 - **Isuzu D-MAX** crew cab with tub: SX 2.2L and 3.0L diesel and LS-U 3.0L diesel 4x2; SX and X-RIDER 2.2L and 3.0L diesel, LS-U, LS-U+, X-TERRAIN and BLADE 3.0L diesel 4x4
 - **Isuzu MU-X** (SUV): LS-M 2.2L diesel 4x2; LS-M, LS-U and LS-T 2.2L and 3.0L diesel and X-TERRAIN 3.0L diesel 4x4
+- **Other makes:** a generic dual cab ute and a generic car (five-seat SUV)
+
+If your vehicle is not in the list, pick the generic ute or car. They start with round figures typical of a mid-size 4x4 diesel dual cab ute (GVM 3,200 kg, braked towing 3,500 kg) and of a large five-seat SUV that tows (GVM 2,750 kg, braked towing 3,000 kg). Every one of them is a placeholder: replace them with the values on your placard, in the owner's manual and on the tow bar plate. Give the vehicle its name under **Your vehicle**; a share link shows it.
 
 The current GWM range uses the figures in GWM Australia's brochures (Cannon Alpha, 14 October 2026; Cannon, 16 October 2026): GVM, GCM, axle limits, kerb and tare weights, payload, towing, tyres and dimensions, and for the Cannon also the tub size and how the kerb weight splits between the axles. Earlier GWM models are no longer in a brochure; their weights and towing ratings come from Australian spec listings (CarExpert, carsales, Drive, CarsGuide, 4X4 Australia), and their axle limits, tare and tub sizes are typical values from the closest current model.
 
