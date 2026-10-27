@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import type { Setup } from '../model/types';
 import { newSetup, uid, type ItemTemplate } from '../model/presets';
 import { normalizeSetup } from '../model/migrate';
+import { isTrailerWeight } from '../model/trailers';
 
 export const STORAGE_KEY = 'ute-load-estimator';
 const HISTORY_LIMIT = 80;
@@ -100,6 +101,7 @@ export const useStore = create<AppState>()(
           (s) => {
             setPathMut(s as unknown as Record<string, unknown>, path, value);
             s.placeholders = s.placeholders.filter((p) => p !== path);
+            if (isTrailerWeight(path)) s.caravan.weighedAxles = [...s.caravan.axles];
           },
           { history: path, ...opts },
         );

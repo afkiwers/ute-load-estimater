@@ -125,6 +125,11 @@ export interface CaravanSpec {
   hasBrakes: boolean;
   /** Tow ball (coupling) centre to the centre of each axle, front first: one entry, or two for a tandem. */
   axles: number[];
+  /**
+   * Where the axles were when the readings (or the plated tare ball weight) were taken. Moving them
+   * from here shifts the trailer's own weight between the ball and the axles.
+   */
+  weighedAxles: number[];
   track: number;
   /** Coupling centre to the front wall of the body (A-frame length). */
   bodyStart: number;

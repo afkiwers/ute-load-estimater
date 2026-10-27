@@ -70,6 +70,7 @@ export function TowingPanel() {
   const { atm, tare } = cv.limits;
   const loadCapacity = atm != null && tare != null ? atm - tare : null;
   const atmOverTow = result.checks.find((c) => c.id === 'atmVsTow' && c.status === 'over');
+  const move = result.caravan?.axleMove ?? null;
   const tandem = cv.axles.length > 1;
   const T = trailerName(cv.kind);
   const Tc = trailerName(cv.kind, true);
@@ -246,6 +247,18 @@ export function TowingPanel() {
                 Axle spacing {mm(Math.abs(cv.axles[1] - cv.axles[0]))}. The axles share the load equally, so they act as one axle{' '}
                 {mm(axleCentre(cv))} behind the tow ball.
               </p>
+            )}
+            {move && (
+              <div className="axle-move">
+                <p className="section-note" style={{ margin: 0 }}>
+                  The axles are {mm(Math.abs(move.to - move.from))} {move.to > move.from ? 'further back' : 'further forward'} than when the{' '}
+                  {base?.source === 'spec' ? 'plated tare ball weight was taken' : `${T} was weighed`}. Its own weight stays where it is, so its ball weight
+                  goes from {kg(move.ballBefore)} to {kg(move.ballAfter)}.
+                </p>
+                <button className="btn" onClick={() => update((s) => void (s.caravan.weighedAxles = [...s.caravan.axles]))}>
+                  {base?.source === 'spec' ? 'The plate is for this axle position' : 'The axles were here when weighed'}
+                </button>
+              </div>
             )}
           </Section>
 

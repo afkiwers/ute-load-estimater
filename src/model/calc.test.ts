@@ -8,7 +8,7 @@ import {
   uteShare,
 } from './calc';
 import { ITEM_TEMPLATES, applyTrailerKind, itemFromTemplate, newSetup, defaultSettings, emptyCaravanReadings, emptyUteReadings } from './presets';
-import { TRAILER_KINDS, trailerPreset } from './trailers';
+import { TRAILER_KINDS, isTrailerWeight, trailerPreset } from './trailers';
 import type { LoadItem, Setup } from './types';
 import { loadIndexKg, rimDiameter, tyreDiameter } from './tyres';
 import { axleCentre } from './geometry';
@@ -532,5 +532,63 @@ describe('trailer types', () => {
     const old = structuredClone(newSetup()) as unknown as Record<string, any>;
     delete old.caravan.kind;
     expect(normalizeSetup(old).caravan.kind).toBe('caravan');
+  });
+});
+
+describe('moving the trailer axles', () => {
+  // The preset caravan, not weighed: plated tare 2350 kg with 230 kg on the ball, axles 4800 / 5800 mm.
+  const towed = () => {
+    const s = bareSetup();
+    s.towing = true;
+    s.caravan = trailerPreset('caravan');
+    s.caravanReadings = emptyCaravanReadings();
+    return s;
+  };
+  const centre = 5300 * (1 - 230 / 2350);
+
+  it('keeps the plated ball weight while the axles are where it was taken', () => {
+    const r = compute(towed());
+    expect(r.hitch!.ball).toBeCloseTo(230);
+    expect(r.caravan!.axleMove).toBeNull();
+  });
+
+  it("shifts the trailer's own weight when the axles move, its centre of mass staying put", () => {
+    const s = towed();
+    s.caravan.axles = [5000, 6000];
+    const r = compute(s);
+    expect(r.hitch!.ball).toBeCloseTo(2350 * (1 - centre / 5500));
+    expect(r.hitch!.ball).toBeGreaterThan(230);
+    expect(r.caravan!.mass).toBeCloseTo(2350);
+    expect(r.caravan!.axleMove).toMatchObject({ from: 5300, to: 5500, ballBefore: 230 });
+    expect(r.caravan!.axleLoads.reduce((a, b) => a + b, 0)).toBeCloseTo(r.caravan!.axle);
+    // Forward: less on the ball.
+    s.caravan.axles = [4600, 5600];
+    expect(compute(s).hitch!.ball).toBeLessThan(230);
+  });
+
+  it('moves added items with the axles as before', () => {
+    const s = towed();
+    s.items = [item({ host: 'caravan', mass: 100, pos: { x: 3000, y: 0, z: 900 } })];
+    s.caravan.axles = [5000, 6000];
+    const withItem = compute(s).hitch!.ball;
+    s.items = [];
+    expect(withItem - compute(s).hitch!.ball).toBeCloseTo(100 * (1 - 3000 / 5500));
+  });
+
+  it('takes the axles as weighed where they are when a correction is confirmed', () => {
+    const s = towed();
+    s.caravan.axles = [5000, 6000];
+    s.caravan.weighedAxles = [...s.caravan.axles];
+    expect(compute(s).hitch!.ball).toBeCloseTo(230);
+  });
+
+  it('knows which fields are the trailer weight, and gives old saves their axles as weighed', () => {
+    expect(isTrailerWeight('caravanReadings.ball')).toBe(true);
+    expect(isTrailerWeight('caravan.limits.tareBall')).toBe(true);
+    expect(isTrailerWeight('caravan.axles.0')).toBe(false);
+    const old = structuredClone(towed()) as unknown as Record<string, any>;
+    old.caravan.axles = [4900];
+    delete old.caravan.weighedAxles;
+    expect(normalizeSetup(old).caravan.weighedAxles).toEqual([4900]);
   });
 });

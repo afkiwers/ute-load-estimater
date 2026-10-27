@@ -32,6 +32,8 @@ function upgradeSetup<T>(raw: T): T {
   upgradeCaravanAxles(copy);
   const cv = copy.caravan as Raw | undefined;
   if (cv && Array.isArray(cv.axles) && (cv.axles.length < 1 || cv.axles.length > 2)) delete cv.axles;
+  // Saved before the weighed axle position was kept: take the readings as taken where the axles are.
+  if (cv && Array.isArray(cv.axles) && !Array.isArray(cv.weighedAxles)) cv.weighedAxles = [...cv.axles];
   return copy as T;
 }
 

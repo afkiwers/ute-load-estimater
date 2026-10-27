@@ -32,7 +32,20 @@ export function trailerName(kind: TrailerKind, capital = false): string {
 // Small-trailer tyre: 185/80R14 (652 mm), load index 102 = 850 kg.
 const SMALL_TYRE = { size: '185/80R14', loadIndex: 102, loadKg: null };
 
+/**
+ * Whether a setup path holds the trailer's own weight (a reading or the plated tare and tare ball
+ * weight). Entering one says the trailer weighs that with its axles where they are now.
+ */
+export function isTrailerWeight(path: string): boolean {
+  return path.startsWith('caravanReadings.') || path === 'caravan.limits.tare' || path === 'caravan.limits.tareBall';
+}
+
 export function trailerPreset(kind: TrailerKind): CaravanSpec {
+  const cv = presetSpec(kind);
+  return { ...cv, weighedAxles: [...cv.axles] };
+}
+
+function presetSpec(kind: TrailerKind): Omit<CaravanSpec, 'weighedAxles'> {
   switch (kind) {
     case 'caravan':
       return {

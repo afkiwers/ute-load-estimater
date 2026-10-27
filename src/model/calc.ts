@@ -104,6 +104,8 @@ export interface CaravanResult {
   /** Load on each axle, front first. Changes since weighing are shared equally between tandem axles. */
   axleLoads: number[];
   ballPct: number;
+  /** The trailer's own weight moved to where the axles are now, if they moved since weighing. */
+  axleMove: { from: number; to: number; ballBefore: number; ballAfter: number } | null;
 }
 
 export interface HitchResult {
@@ -191,6 +193,21 @@ export function caravanShare(mass: number, p: Vec3, cv: CaravanSpec): CaravanLoa
   const axle = (mass * p.x) / axleCentre(cv);
   const l = p.y / cv.track;
   return { ball: mass - axle, left: axle * (0.5 - l), right: axle * (0.5 + l) };
+}
+
+/**
+ * The trailer's own weight, as weighed with the axles at cv.weighedAxles, carried with the axles where
+ * they are now. Its centre of mass stays put, so axles moved back put more of it on the ball.
+ */
+export function ownWeightAt(weighed: CaravanLoads, cv: CaravanSpec): CaravanLoads {
+  const mass = weighed.ball + weighed.left + weighed.right;
+  const from = axleCentre({ ...cv, axles: cv.weighedAxles?.length ? cv.weighedAxles : cv.axles });
+  const to = axleCentre(cv);
+  if (!(mass > 0) || !(from > 0) || Math.abs(to - from) < 0.5) return weighed;
+  const centre = from * (1 - weighed.ball / mass);
+  const ball = mass * (1 - centre / to);
+  const toEachSide = (weighed.ball - ball) / 2;
+  return { ball, left: weighed.left + toEachSide, right: weighed.right + toEachSide };
 }
 
 const UTE_LABEL: Record<keyof UteReadings, string> = {
@@ -625,7 +642,8 @@ export function compute(setup: Setup): Result {
   let hitchResult: HitchResult | null = null;
 
   if (towing && cvBase) {
-    const loads = addCaravan(cvBase.loads, cvItems);
+    const own = ownWeightAt(cvBase.loads, cv);
+    const loads = addCaravan(own, cvItems);
     const mass = loads.ball + loads.left + loads.right;
     const B = loads.ball;
     const L = ute.wheelbase;
@@ -674,6 +692,10 @@ export function compute(setup: Setup): Result {
       axle: axleLeft + axleRight,
       axleLoads: cvBase.axles.map((x) => x + groupChange / cvBase.axles.length),
       ballPct: mass > 0 ? (B / mass) * 100 : 0,
+      axleMove:
+        own === cvBase.loads
+          ? null
+          : { from: axleCentre({ ...cv, axles: cv.weighedAxles }), to: a, ballBefore: cvBase.loads.ball, ballAfter: own.ball },
     };
     const frontHitched = frontUnhitched + frontDelta;
     hitchResult = {
