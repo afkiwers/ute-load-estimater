@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ITEM_TEMPLATES, itemFromTemplate, uid, type ItemTemplate } from '../model/presets';
 import { trailerName } from '../model/trailers';
 import { activeSetup, useStore } from '../state/store';
-import { useUi } from '../state/ui';
+import { isNarrow, useUi } from '../state/ui';
 
 /** The template being dragged from the palette; dataTransfer can't be read during dragover. */
 export const paletteDrag: { current: ItemTemplate | null } = { current: null };
@@ -12,6 +12,8 @@ export function addTemplate(tpl: ItemTemplate) {
   const item = itemFromTemplate(tpl, setup);
   useStore.getState().update((s) => void s.items.push(item));
   useUi.getState().select(item.id);
+  // As a drawer the list covers the view; get it out of the way to show the new item.
+  if (isNarrow()) useUi.getState().setPaletteOpen(false);
   if (item.host === 'caravan' && !setup.towing) useUi.getState().showToast(`Added to the ${trailerName(setup.caravan.kind)}, but towing is switched off (Towing tab).`);
 }
 
@@ -116,9 +118,17 @@ export function Palette() {
   const templates = ITEM_TEMPLATES.filter((t) => !t.kinds || (towing && t.kinds.includes(kind)));
   const categories = [...new Set(templates.map((t) => t.category))];
   return (
-    <aside className="palette">
-      <div className="panel-title">Items</div>
-      <p className="palette-hint">Drag onto the ute or trailer in the 3D view. Change the mass and position afterwards.</p>
+    <aside className="palette" aria-label="Items">
+      <div className="panel-title palette-head">
+        Items
+        <button className="icon-btn" title="Hide the items list" aria-label="Hide the items list" onClick={() => useUi.getState().setPaletteOpen(false)}>
+          «
+        </button>
+      </div>
+      <p className="palette-hint">
+        <span className="only-mouse">Drag onto the ute or trailer in the 3D view. Change the mass and position afterwards.</span>
+        <span className="only-touch">Tap + to add an item at its usual spot, then change its mass and position.</span>
+      </p>
 
       <div className="panel-title" style={{ display: 'flex', alignItems: 'center' }}>
         My items
@@ -129,7 +139,7 @@ export function Palette() {
       {showForm && <CustomForm />}
       {custom.length === 0 && !showForm && (
         <p className="palette-hint" style={{ marginBottom: 0 }}>
-          Click + to create your own item with its exact weight.
+          Use + to create your own item with its exact weight.
         </p>
       )}
       {custom.map((t) => (

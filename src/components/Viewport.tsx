@@ -155,7 +155,10 @@ export function Viewport() {
         <div className="label-layer" ref={(el) => void (labelLayer.current = el)} />
         <Scene />
         <ViewToolbar />
-        <div className="view-hint">Drag items to move them · left-drag to orbit · right-drag to pan · scroll to zoom</div>
+        <div className="view-hint">
+          <span className="only-mouse">Drag items to move them · left-drag to orbit · right-drag to pan · scroll to zoom</span>
+          <span className="only-touch">One finger to orbit · two fingers to pan and zoom · tap an item to edit it</span>
+        </div>
         <Inspector />
       </div>
     </section>

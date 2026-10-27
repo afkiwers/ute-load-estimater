@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { overallStatus } from './model/calc';
 import { useStore } from './state/store';
 import { useResult } from './state/result';
-import { useUi, type Tab } from './state/ui';
+import { NARROW, paletteDefault, useUi, type Tab } from './state/ui';
 import { TopBar } from './components/TopBar';
 import { Palette } from './components/Palette';
 import { Viewport } from './components/Viewport';
@@ -97,12 +97,25 @@ function useShortcuts() {
   }, []);
 }
 
+/** Crossing the drawer width switches the items list to that size's default. */
+function usePaletteFollowsWidth() {
+  useEffect(() => {
+    const mq = matchMedia(NARROW);
+    const onChange = () => useUi.setState({ paletteOpen: paletteDefault() });
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+}
+
 export function App() {
   useShortcuts();
+  usePaletteFollowsWidth();
+  const paletteOpen = useUi((s) => s.paletteOpen);
   return (
     <div className="app">
       <TopBar />
-      <main className="main">
+      <main className={`main ${paletteOpen ? 'palette-open' : 'palette-closed'}`}>
+        {paletteOpen && <div className="palette-backdrop" onClick={() => useUi.getState().setPaletteOpen(false)} />}
         <Palette />
         <Viewport />
         <SidePanel />

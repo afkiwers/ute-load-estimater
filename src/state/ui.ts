@@ -2,6 +2,22 @@ import { create } from 'zustand';
 import type { Host, ItemSize, ItemShape, Vec3 } from '../model/types';
 
 export type Tab = 'results' | 'ute' | 'towing' | 'items';
+
+/** Below this width the items list is a drawer over the page rather than a column. */
+export const NARROW = '(max-width: 900px)';
+const PALETTE_KEY = 'ute-load-estimator:palette';
+
+export const isNarrow = () => typeof matchMedia === 'function' && matchMedia(NARROW).matches;
+
+/** Open on wide screens unless the viewer closed it there before; closed as a drawer. */
+export function paletteDefault(): boolean {
+  if (isNarrow()) return false;
+  try {
+    return localStorage.getItem(PALETTE_KEY) !== 'closed';
+  } catch {
+    return true;
+  }
+}
 export type ViewPreset = 'iso' | 'side' | 'top' | 'front' | 'rear' | 'ute' | 'caravan';
 
 export interface DropPreview {
@@ -22,6 +38,7 @@ interface UiState {
   view: { preset: ViewPreset; nonce: number };
   toast: { text: string; nonce: number } | null;
   snapshot: string | null;
+  paletteOpen: boolean;
 
   setTab: (t: Tab) => void;
   select: (id: string | null) => void;
@@ -32,6 +49,7 @@ interface UiState {
   setView: (preset: ViewPreset) => void;
   showToast: (text: string) => void;
   setSnapshot: (s: string | null) => void;
+  setPaletteOpen: (open: boolean) => void;
 }
 
 export const useUi = create<UiState>()((set) => ({
@@ -44,6 +62,7 @@ export const useUi = create<UiState>()((set) => ({
   view: { preset: 'iso', nonce: 0 },
   toast: null,
   snapshot: null,
+  paletteOpen: paletteDefault(),
 
   setTab: (tab) => set({ tab }),
   select: (selectedId) => set({ selectedId }),
@@ -54,6 +73,16 @@ export const useUi = create<UiState>()((set) => ({
   setView: (preset) => set((s) => ({ view: { preset, nonce: s.view.nonce + 1 } })),
   showToast: (text) => set((s) => ({ toast: { text, nonce: (s.toast?.nonce ?? 0) + 1 } })),
   setSnapshot: (snapshot) => set({ snapshot }),
+  setPaletteOpen: (paletteOpen) => {
+    if (!isNarrow()) {
+      try {
+        localStorage.setItem(PALETTE_KEY, paletteOpen ? 'open' : 'closed');
+      } catch {
+        // Storage blocked: it just won't be remembered.
+      }
+    }
+    set({ paletteOpen });
+  },
 }));
 
 /** Bridges the three.js scene to DOM handlers (palette drops, report snapshots). */
