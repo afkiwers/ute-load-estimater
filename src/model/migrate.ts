@@ -2,7 +2,8 @@
 // up to the current shape and fills in anything added since.
 
 import type { Setup } from './types';
-import { newSetup, uid } from './presets';
+import { newSetup, uid, vehicleSpec } from './presets';
+import { trailerPreset } from './trailers';
 
 type Raw = Record<string, unknown>;
 
@@ -53,5 +54,41 @@ export function normalizeSetup(input: Partial<Setup>): Setup {
   const merged = merge(base, raw) as Setup;
   merged.items = (raw.items ?? []).map((it) => ({ ...it, id: it.id ?? uid() }));
   merged.placeholders = raw.placeholders ?? [];
+  // Sizes the fields never allow at 0 or below (a hand-edited file) take the model's or trailer type's instead.
+  const defaults = { ute: vehicleSpec(merged.ute.model), caravan: trailerPreset(merged.caravan.kind), hitch: base.hitch };
+  for (const path of SIZES) {
+    if (!(Number(getPath(merged, path)) > 0)) setPath(merged, path, getPath(defaults, path));
+  }
+  const axlesOk = (xs: unknown) => Array.isArray(xs) && xs.length >= 1 && xs.length <= 2 && xs.every((x) => Number(x) > 0);
+  if (!axlesOk(merged.caravan.axles)) merged.caravan.axles = [...defaults.caravan.axles];
+  if (!axlesOk(merged.caravan.weighedAxles)) merged.caravan.weighedAxles = [...merged.caravan.axles];
   return merged;
+}
+
+const SIZES = [
+  'ute.wheelbase',
+  'ute.trackFront',
+  'ute.trackRear',
+  'ute.overallLength',
+  'ute.overallWidth',
+  'ute.overallHeight',
+  'ute.tub.length',
+  'ute.tub.width',
+  'ute.tub.depth',
+  'ute.tub.floorHeight',
+  'ute.kerbFrontPct',
+  'hitch.ballHeight',
+  'caravan.track',
+  'caravan.bodyStart',
+  'caravan.bodyLength',
+  'caravan.bodyWidth',
+  'caravan.bodyHeight',
+  'caravan.floorHeight',
+];
+
+const getPath = (o: unknown, path: string) => path.split('.').reduce<unknown>((a, k) => (a as Raw | undefined)?.[k], o);
+function setPath(o: unknown, path: string, v: unknown) {
+  const keys = path.split('.');
+  const last = keys.pop()!;
+  (keys.reduce<unknown>((a, k) => (a as Raw)[k], o) as Raw)[last] = v;
 }

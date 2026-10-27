@@ -173,6 +173,11 @@ function clean(v: number | null | undefined): number | null {
   return v != null && Number.isFinite(v) && v > 0 ? v : null;
 }
 
+/** A size used to divide by, no smaller than its field allows. */
+function atLeast(v: number | null | undefined, min: number): number {
+  return v != null && Number.isFinite(v) && v >= min ? v : min;
+}
+
 /** Load a point mass puts on each ute wheel. Works for positions ahead of the front axle or behind the rear one. */
 export function uteShare(mass: number, p: Vec3, ute: UteSpec): WheelLoads {
   const rearFrac = p.x / ute.wheelbase;
@@ -595,7 +600,15 @@ function minOf(...values: (number | null | undefined)[]): number | null {
 }
 
 export function compute(setup: Setup): Result {
-  const { ute, hitch, caravan: cv, settings: s } = setup;
+  const { hitch, settings: s } = setup;
+  // The fields never allow sizes this small, but an imported file might: keep the shares finite.
+  const ute = { ...setup.ute, wheelbase: atLeast(setup.ute.wheelbase, 1000), trackFront: atLeast(setup.ute.trackFront, 500), trackRear: atLeast(setup.ute.trackRear, 500) };
+  const cv = {
+    ...setup.caravan,
+    track: atLeast(setup.caravan.track, 500),
+    axles: setup.caravan.axles.map((x) => atLeast(x, 300)),
+    weighedAxles: (setup.caravan.weighedAxles ?? setup.caravan.axles).map((x) => atLeast(x, 300)),
+  };
   const T = trailerName(cv.kind);
   const Tc = trailerName(cv.kind, true);
   const towing = setup.towing;
