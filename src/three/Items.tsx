@@ -52,6 +52,37 @@ export function ItemShapeMesh({ shape, size, color, opacity, outline, userData, 
       </group>
     );
   }
+  if (shape === 'bullbar') {
+    // Bottom pan, uprights and a centre hoop, so the grille and winch stay visible.
+    const t = Math.min(0.065, l * 0.3);
+    const pan = h * 0.42;
+    const uprights = [-0.4, -0.13, 0.13, 0.4];
+    return (
+      <group {...events}>
+        <mesh position={[0, -h / 2 + pan / 2, 0]} castShadow userData={userData}>
+          <boxGeometry args={[l, pan, w]} />
+          <Mat color={color} opacity={opacity} roughness={0.45} metalness={0.4} />
+          {outline && <Edges color={outline} />}
+        </mesh>
+        <mesh position={[l * 0.15, h / 2 - t / 2, 0]} castShadow userData={userData}>
+          <boxGeometry args={[t, t, w * 0.62]} />
+          <Mat color={color} opacity={opacity} roughness={0.45} metalness={0.4} />
+        </mesh>
+        {uprights.map((f) => (
+          <mesh key={f} position={[l * 0.15, -h / 2 + pan + (h - pan) / 2, w * f * (Math.abs(f) > 0.3 ? 0.78 : 1)]} castShadow userData={userData}>
+            <boxGeometry args={[t, h - pan, t]} />
+            <Mat color={color} opacity={opacity} roughness={0.45} metalness={0.4} />
+          </mesh>
+        ))}
+        {[-1, 1].map((side) => (
+          <mesh key={side} position={[0, -h / 2 + pan + t / 2, (side * w) / 2 - side * w * 0.09]} castShadow userData={userData}>
+            <boxGeometry args={[l * 0.9, t, w * 0.18]} />
+            <Mat color={color} opacity={opacity} roughness={0.45} metalness={0.4} />
+          </mesh>
+        ))}
+      </group>
+    );
+  }
   if (shape === 'cylinder') {
     const axis = cylinderAxis(size);
     const [r, len, rot] =

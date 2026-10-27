@@ -19,7 +19,7 @@ export interface Placement {
   pos: Vec3;
 }
 
-export type ItemShape = 'box' | 'cylinder' | 'person';
+export type ItemShape = 'box' | 'cylinder' | 'person' | 'bullbar';
 
 export interface ItemSize {
   l: number; // along x
@@ -91,6 +91,8 @@ export interface UteSpec {
   limits: UteLimits;
   /** Front axle share of kerb weight, only used when nothing has been measured. */
   kerbFrontPct: number;
+  /** Body colour in the 3D view. */
+  paint: string;
 }
 
 export interface HitchSpec {

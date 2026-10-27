@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
-import { Grid, OrbitControls } from '@react-three/drei';
+import { ContactShadows, Environment, Grid, Lightformer, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { caravanGeometry, caravanOffset, uteGeometry } from '../model/geometry';
 import { activeSetup } from '../state/store';
@@ -98,9 +98,14 @@ export function Scene() {
   const labels = useUi((s) => s.labels);
   const offset = caravanOffset(setup);
   const items = setup.towing ? setup.items : setup.items.filter((i) => i.host === 'ute');
+  const g = uteGeometry(setup.ute, setup.hitch);
+  const end = setup.towing ? offset + caravanGeometry(setup.caravan, setup.hitch).bodyEnd + 200 : g.sRear + 100;
+  const shadowLen = (end - g.sFront) / 1000 + 3;
 
   return (
     <Canvas
+      // Render only when something changes: the scene is static between edits and camera moves.
+      frameloop="demand"
       shadows="percentage"
       dpr={[1, 2]}
       gl={{ preserveDrawingBuffer: true, antialias: true }}
@@ -108,10 +113,20 @@ export function Scene() {
       onPointerMissed={() => useUi.getState().select(null)}
     >
       <color attach="background" args={['#eceef1']} />
-      <hemisphereLight args={['#ffffff', '#b9b4aa', 1.15]} />
+      <fog attach="fog" args={['#eceef1', 45, 120]} />
+      {/* Procedural studio lighting for reflections: no HDR download, so it works offline. */}
+      <Environment resolution={256} frames={1}>
+        <color attach="background" args={['#9da3ab']} />
+        <Lightformer intensity={2.6} rotation-x={Math.PI / 2} position={[0, 7, 0]} scale={[16, 7, 1]} />
+        <Lightformer intensity={1.5} rotation-y={Math.PI / 2} position={[-9, 2.2, 0]} scale={[18, 1.4, 1]} />
+        <Lightformer intensity={1.5} rotation-y={-Math.PI / 2} position={[9, 2.2, 0]} scale={[18, 1.4, 1]} />
+        <Lightformer intensity={1} position={[0, 1.6, 10]} scale={[12, 2.5, 1]} />
+        <Lightformer intensity={1.8} color="#ffd8b0" rotation-y={Math.PI} position={[0, 3, -10]} scale={[10, 2.5, 1]} />
+      </Environment>
+      <hemisphereLight args={['#ffffff', '#b9b4aa', 0.45]} />
       <directionalLight
         position={[4, 14, -8]}
-        intensity={1.7}
+        intensity={1.5}
         castShadow
         shadow-mapSize={[4096, 4096]}
         shadow-camera-left={-18}
@@ -136,6 +151,16 @@ export function Scene() {
         fadeDistance={45}
         fadeStrength={1.5}
         infiniteGrid
+      />
+
+      <ContactShadows
+        position={[-(g.sFront + end) / 2000, 0.003, 0]}
+        scale={[shadowLen, 7]}
+        resolution={1024}
+        blur={2.2}
+        opacity={0.5}
+        far={2.5}
+        color="#1d2228"
       />
 
       <UteModel ute={setup.ute} hitch={setup.hitch} xray={xray} />

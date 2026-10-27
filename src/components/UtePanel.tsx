@@ -2,7 +2,7 @@ import type { UteReadings } from '../model/types';
 import type { UteBaselineSource } from '../model/calc';
 import { kg } from '../model/format';
 import { loadIndexKg } from '../model/tyres';
-import { cannonAlphaVantaDiesel, PRESET_PLACEHOLDERS } from '../model/presets';
+import { cannonAlphaVantaDiesel, PAINTS, PRESET_PLACEHOLDERS } from '../model/presets';
 import { useStore } from '../state/store';
 import { useResult, useSetup } from '../state/result';
 import { IssueList, NumField, Section, TextField, flagFor } from './fields';
@@ -34,6 +34,7 @@ export function UtePanel() {
   const setup = useSetup();
   const result = useResult();
   const update = useStore((s) => s.update);
+  const setPath = useStore((s) => s.setPath);
   const base = result.ute.baseline;
   const issues = base.issues;
   const tyreKg = loadIndexKg(setup.ute.tyre.loadIndex);
@@ -98,6 +99,22 @@ export function UtePanel() {
         <div className="fields">
           <TextField path="ute.tyre.size" label="Size" hint="Sets the wheel size in 3D." />
           <NumField path="ute.tyre.loadIndex" label="Load index" unit="LI" hint={tyreKg ? `${kg(tyreKg)} per tyre` : 'Printed after the size, e.g. 109'} />
+        </div>
+      </Section>
+
+      <Section title="Paint" extra={PAINTS.find((p) => p.color === setup.ute.paint)?.name ?? 'Custom'}>
+        <div className="swatches">
+          {PAINTS.map((p) => (
+            <button
+              key={p.color}
+              className={`paint${setup.ute.paint === p.color ? ' on' : ''}`}
+              style={{ background: p.color }}
+              title={p.name}
+              aria-label={p.name}
+              onClick={() => setPath('ute.paint', p.color)}
+            />
+          ))}
+          <input type="color" value={setup.ute.paint} onChange={(e) => setPath('ute.paint', e.target.value)} title="Custom colour" aria-label="Custom colour" />
         </div>
       </Section>
 

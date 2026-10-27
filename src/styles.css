@@ -528,6 +528,35 @@ button {
   flex-wrap: wrap;
 }
 
+.swatches {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.swatches .paint {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--panel);
+  box-shadow: 0 0 0 1px var(--border-strong), inset 0 -6px 10px rgb(0 0 0 / 0.18), inset 0 4px 8px rgb(255 255 255 / 0.35);
+  padding: 0;
+}
+
+.swatches .paint.on {
+  box-shadow: 0 0 0 2px var(--accent), inset 0 -6px 10px rgb(0 0 0 / 0.18), inset 0 4px 8px rgb(255 255 255 / 0.35);
+}
+
+.swatches input[type='color'] {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  padding: 1px;
+  background: var(--panel);
+}
+
 /* ---------- Weighbridge diagram ---------- */
 
 .wb {

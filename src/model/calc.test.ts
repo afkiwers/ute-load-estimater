@@ -9,7 +9,7 @@ import {
 } from './calc';
 import { ITEM_TEMPLATES, itemFromTemplate, newSetup, defaultSettings, emptyCaravanReadings, emptyUteReadings } from './presets';
 import type { LoadItem, Setup } from './types';
-import { loadIndexKg, tyreDiameter } from './tyres';
+import { loadIndexKg, rimDiameter, tyreDiameter } from './tyres';
 
 const settings = defaultSettings();
 
@@ -49,6 +49,10 @@ describe('tyres', () => {
     expect(tyreDiameter('265/55R19')).toBe(774);
     expect(tyreDiameter('LT265/75R16')).toBe(804);
     expect(tyreDiameter('33x12.5R15')).toBe(838);
+  });
+  it('reads the rim size', () => {
+    expect(rimDiameter('265/55R19')).toBe(19);
+    expect(rimDiameter('LT265/75 R16')).toBe(16);
   });
 });
 

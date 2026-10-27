@@ -41,3 +41,9 @@ export function tyreWidth(size: string): number | null {
   if (flotation) return Math.round(Number(flotation[1]) * 25.4);
   return null;
 }
+
+/** Rim diameter in inches, e.g. 19 for "265/55R19". */
+export function rimDiameter(size: string): number | null {
+  const m = /R\s*(\d{2}(?:\.\d)?)\b/i.exec(size);
+  return m ? Number(m[1]) : null;
+}

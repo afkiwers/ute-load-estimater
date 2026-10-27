@@ -90,6 +90,7 @@ export function Inspector() {
                 <option value="box">Box</option>
                 <option value="cylinder">Cylinder</option>
                 <option value="person">Person</option>
+                <option value="bullbar">Bull bar</option>
               </select>
             </span>
           </Labeled>

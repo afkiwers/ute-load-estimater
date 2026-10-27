@@ -121,35 +121,3 @@ export function useArchFlare(cx: number, cz: number, rInner: number, rOuter: num
     return geo;
   }, [cx, cz, rInner, rOuter, zLine, widthMm]);
 }
-
-interface WheelProps {
-  host: Host;
-  offset: number;
-  x: number;
-  y: number;
-  r: number;
-  width: number;
-  rim?: string;
-}
-
-export function Wheel({ host, offset, x, y, r, width, rim = '#2f3237' }: WheelProps) {
-  const position = toWorld(host, { x, y, z: r }, offset);
-  const R = r / 1000;
-  const W = width / 1000;
-  return (
-    <group position={position}>
-      <mesh rotation={[Math.PI / 2, 0, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[R, R, W, 40]} />
-        <Mat color="#1b1c1e" roughness={0.9} />
-      </mesh>
-      <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[R * 0.62, R * 0.62, W + 0.008, 32]} />
-        <Mat color={rim} roughness={0.35} metalness={0.5} />
-      </mesh>
-      <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[R * 0.22, R * 0.22, W + 0.016, 20]} />
-        <Mat color="#9aa1aa" roughness={0.3} metalness={0.7} />
-      </mesh>
-    </group>
-  );
-}

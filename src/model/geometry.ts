@@ -3,7 +3,7 @@
 // scaled to the entered dimensions.
 
 import type { CaravanSpec, HitchSpec, Host, ItemSize, Placement, Setup, UteSpec, Vec3 } from './types';
-import { tyreDiameter, tyreWidth } from './tyres';
+import { rimDiameter, tyreDiameter, tyreWidth } from './tyres';
 
 export interface UteGeometry {
   L: number;
@@ -14,7 +14,11 @@ export interface UteGeometry {
   bodyW: number;
   bumperBottom: number;
   bodyBottom: number;
+  /** Rim radius (mm). */
+  rimR: number;
   zBonnet: number;
+  zBonnetFront: number;
+  zCowl: number;
   zBelt: number;
   zRoof: number;
   zRails: number;
@@ -22,6 +26,10 @@ export interface UteGeometry {
   sWindscreenTop: number;
   sRoofBack: number;
   sCabBack: number;
+  bPillar: number;
+  /** Half-width of the greenhouse at the beltline and at the roof (tumblehome). */
+  beltHalf: number;
+  roofHalf: number;
   tubFront: number;
   tubRear: number;
   tubFloor: number;
@@ -44,19 +52,23 @@ export function uteGeometry(ute: UteSpec, hitch: HitchSpec): UteGeometry {
   const zRails = H;
   const zRoof = H - 55;
   const zBonnet = Math.round(H * 0.64);
-  const zBelt = zBonnet + 70;
+  const zBonnetFront = zBonnet - 60;
+  const zCowl = zBonnet + 40;
+  const tubRail = ute.tub.floorHeight + ute.tub.depth;
+  // Modern utes carry the beltline through to the tub rails.
+  const zBelt = Math.max(zBonnet + 90, Math.min(tubRail - 30, zBonnet + 200));
   const bumperBottom = Math.max(300, wheelR * 1.08);
   const bodyBottom = wheelR + 80;
 
   const tubRear = sRear - 140;
   const tubFront = tubRear - ute.tub.length;
   const sCabBack = tubFront - 90;
-  const sWindscreen = sFront + 0.29 * ute.overallLength;
-  const sWindscreenTop = sWindscreen + (zRoof - zBelt) * 1.25;
-  const sRoofBack = sCabBack - 60;
+  const sWindscreen = sFront + 0.3 * ute.overallLength;
+  const sWindscreenTop = sWindscreen + (zRoof - zCowl) * 1.15;
+  const sRoofBack = sCabBack - 90;
   const cabLen = sCabBack - sWindscreen;
 
-  const seatZ = zBelt - 300;
+  const seatZ = Math.round(bumperBottom + 0.4 * (zRoof - bumperBottom));
   const frontRow = sWindscreen + 0.36 * cabLen;
   const rearRow = sWindscreen + 0.76 * cabLen;
   const seats: Vec3[] = [
@@ -76,7 +88,10 @@ export function uteGeometry(ute: UteSpec, hitch: HitchSpec): UteGeometry {
     bodyW,
     bumperBottom,
     bodyBottom,
+    rimR: ((rimDiameter(ute.tyre.size) ?? 18) * 25.4) / 2,
     zBonnet,
+    zBonnetFront,
+    zCowl,
     zBelt,
     zRoof,
     zRails,
@@ -84,10 +99,13 @@ export function uteGeometry(ute: UteSpec, hitch: HitchSpec): UteGeometry {
     sWindscreenTop,
     sRoofBack,
     sCabBack,
+    bPillar: sWindscreen + 0.52 * cabLen,
+    beltHalf: bodyW / 2 - 70,
+    roofHalf: bodyW / 2 - 175,
     tubFront,
     tubRear,
     tubFloor: ute.tub.floorHeight,
-    tubRail: ute.tub.floorHeight + ute.tub.depth,
+    tubRail,
     tubInnerW: Math.min(ute.tub.width, bodyW - 120),
     wheels: [
       { id: 'fl', x: 0, y: -ute.trackFront / 2 },

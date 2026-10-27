@@ -49,8 +49,20 @@ export function cannonAlphaVantaDiesel(): UteSpec {
       towBallMax: 350,
     },
     kerbFrontPct: 56,
+    paint: '#e8eaec',
   };
 }
+
+export const PAINTS: { name: string; color: string }[] = [
+  { name: 'Pearl white', color: '#e8eaec' },
+  { name: 'Silver', color: '#b4b9bf' },
+  { name: 'Ironstone', color: '#555a61' },
+  { name: 'Bronze', color: '#75664f' },
+  { name: 'Sand', color: '#c0a982' },
+  { name: 'Black', color: '#141518' },
+  { name: 'Red', color: '#8c1c1c' },
+  { name: 'Blue', color: '#23405c' },
+];
 
 export function defaultHitch(): HitchSpec {
   return {
@@ -147,8 +159,8 @@ const t = (
 
 export const ITEM_TEMPLATES: ItemTemplate[] = [
   t('winch', 'Front', 'Winch (12,000 lb)', 40, [260, 560, 260], 'frontBumper', '#3d4652'),
-  t('bullbarSteel', 'Front', 'Bull bar (steel)', 75, [320, 1900, 650], 'bullbar', '#2f343b'),
-  t('bullbarAlloy', 'Front', 'Bull bar (alloy)', 38, [320, 1900, 650], 'bullbar', '#a7b0ba'),
+  t('bullbarSteel', 'Front', 'Bull bar (steel)', 75, [320, 1900, 650], 'bullbar', '#2f343b', { shape: 'bullbar' }),
+  t('bullbarAlloy', 'Front', 'Bull bar (alloy)', 38, [320, 1900, 650], 'bullbar', '#a7b0ba', { shape: 'bullbar' }),
   t('lights', 'Front', 'Driving lights / light bar', 7, [120, 1000, 120], 'frontBumper', '#e3b93b'),
   t('driver', 'Cabin', 'Driver', 85, [600, 450, 900], 'seat', '#d08a5c', { shape: 'person', snap: 'seat' }),
   t('passenger', 'Cabin', 'Adult passenger', 80, [600, 450, 900], 'seat', '#c9875f', { shape: 'person', snap: 'seat' }),
