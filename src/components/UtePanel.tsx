@@ -1,7 +1,7 @@
 import type { UteReadings } from '../model/types';
 import type { UteBaselineSource } from '../model/calc';
 import { kg } from '../model/format';
-import { loadIndexKg } from '../model/tyres';
+import { loadIndexKg, tyreDiameter } from '../model/tyres';
 import { applyVehicle, PAINTS } from '../model/presets';
 import { VEHICLE_GROUPS, VEHICLES, vehicleModel } from '../model/vehicles';
 import { useStore } from '../state/store';
@@ -111,7 +111,7 @@ export function UtePanel() {
           <NumField path="ute.limits.frontAxle" label="Max front axle" />
           <NumField path="ute.limits.rearAxle" label="Max rear axle" />
           <NumField path="ute.limits.kerb" label="Kerb weight" />
-          <NumField path="ute.limits.tare" label="Tare weight" />
+          <NumField path="ute.limits.tare" label="Tare weight" hint="Checks the weighbridge total isn't too light." />
           <NumField path="ute.limits.payload" label="Max payload" />
           <NumField path="ute.limits.towBallMax" label="Max downball" />
           <NumField path="ute.limits.brakedTow" label="Braked towing" />
@@ -121,7 +121,11 @@ export function UtePanel() {
 
       <Section title="Tyres">
         <div className="fields">
-          <TextField path="ute.tyre.size" label="Size" hint="Sets the wheel size in 3D." />
+          <TextField
+            path="ute.tyre.size"
+            label="Size"
+            hint={tyreDiameter(setup.ute.tyre.size) ? 'Sets the wheel size in 3D.' : 'Not recognised, so the 3D wheels use a typical size. Write it like 265/60R18.'}
+          />
           <NumField path="ute.tyre.loadIndex" label="Load index" unit="LI" hint={tyreKg ? `${kg(tyreKg)} per tyre` : 'Printed after the size, e.g. 109'} />
         </div>
       </Section>
@@ -143,6 +147,9 @@ export function UtePanel() {
       </Section>
 
       <Section title="Dimensions" open={false}>
+        <p className="section-note">
+          Wheelbase and track set how loads split between the axles and wheels. The other sizes shape the 3D model and where items sit.
+        </p>
         <div className="fields">
           <NumField path="ute.wheelbase" label="Wheelbase" unit="mm" nullable={false} min={1000} />
           <NumField path="ute.frontOverhang" label="Front axle → bumper" unit="mm" nullable={false} min={0} />

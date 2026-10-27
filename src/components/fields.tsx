@@ -37,33 +37,51 @@ interface NumInputProps {
   ariaLabel?: string;
 }
 
-/** Number input that keeps the typed text while focused and accepts empty as "not set". */
+/**
+ * Number input that applies every keystroke that gives a usable value, keeps the typed text while
+ * focused and accepts empty as "not set". Text it can't use is flagged, and the last value stays.
+ */
 export function NumInput({ value, onChange, unit, derived, nullable = true, min, ariaLabel }: NumInputProps) {
   const [text, setText] = useState(value == null ? '' : String(value));
   const [focused, setFocused] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
   useEffect(() => {
     if (!focused) setText(value == null ? '' : String(value));
   }, [value, focused]);
+  const withUnit = (n: number) => `${num(n)}${unit ? ` ${unit}` : ''}`;
   return (
-    <span className="field-input">
-      <input
-        inputMode="decimal"
-        aria-label={ariaLabel}
-        value={text}
-        placeholder={derived != null ? `≈ ${num(derived)}` : nullable ? 'not set' : ''}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        onChange={(e) => {
-          setText(e.target.value);
-          const n = parseNumber(e.target.value);
-          if (n === undefined) return;
-          if (n === null && !nullable) return;
-          if (n !== null && min != null && n < min) return;
-          onChange(n);
-        }}
-      />
-      {unit && <span className="unit">{unit}</span>}
-    </span>
+    <>
+      <span className={`field-input${problem ? ' invalid' : ''}`}>
+        <input
+          inputMode="decimal"
+          aria-label={ariaLabel}
+          aria-invalid={problem ? true : undefined}
+          value={text}
+          placeholder={derived != null ? `≈ ${num(derived)}` : nullable ? 'not set' : ''}
+          onFocus={() => setFocused(true)}
+          onBlur={() => {
+            setFocused(false);
+            setProblem(null);
+          }}
+          onChange={(e) => {
+            setText(e.target.value);
+            const n = parseNumber(e.target.value);
+            let why: string | null = null;
+            if (n === undefined) why = 'Not a number';
+            else if (n === null && !nullable) why = 'Needs a value';
+            else if (n !== null && min != null && n < min) why = `At least ${withUnit(min)}`;
+            setProblem(why);
+            if (!why && n !== undefined) onChange(n);
+          }}
+        />
+        {unit && <span className="unit">{unit}</span>}
+      </span>
+      {problem && (
+        <span className="field-problem" role="alert">
+          {problem}.{value != null && ` Still using ${withUnit(value)}.`}
+        </span>
+      )}
+    </>
   );
 }
 

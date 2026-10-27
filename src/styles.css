@@ -510,6 +510,16 @@ button {
   border-left: 3px solid var(--info);
 }
 
+.field-input.invalid {
+  border-color: var(--over);
+  background: var(--over-soft);
+}
+
+.field-problem {
+  font-size: 11px;
+  color: var(--over);
+}
+
 .field-read .field-input {
   background: var(--panel-2);
   border-style: dashed;

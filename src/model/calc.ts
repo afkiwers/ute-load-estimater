@@ -21,7 +21,7 @@ import type {
 import { kg, mm, num, pct, signedKg } from './format';
 import { axleCentre } from './geometry';
 import { trailerName } from './trailers';
-import { loadIndexKg, tyreDiameter, tyreLoadKg } from './tyres';
+import { hasLoadRating, loadIndexKg, tyreDiameter, tyreLoadKg } from './tyres';
 
 export type WheelId = 'fl' | 'fr' | 'rl' | 'rr';
 export type WheelLoads = Record<WheelId, number>;
@@ -418,8 +418,16 @@ export function deriveUteBaseline(r: UteReadings, ute: UteSpec, s: CheckSettings
         fields: ['uteReadings.front', 'uteReadings.rear'],
       });
     }
-    const kerb = ute.limits.kerb;
-    if (kerb && gross < kerb * 0.95) {
+    // The ute weighs at least its tare: empty, with only 10 L of fuel. Without one, allow for the fuel in the kerb weight.
+    const tare = clean(ute.limits.tare);
+    const kerb = clean(ute.limits.kerb);
+    if (tare && gross < tare - tolerance(tare, s)) {
+      issues.push({
+        level: 'warn',
+        message: `Measured ${kg(gross)} is less than the tare weight (${kg(tare)}), the ute empty with 10 L of fuel. Check the readings.`,
+        fields: ['uteReadings.total'],
+      });
+    } else if (!tare && kerb && gross < kerb * 0.95) {
       issues.push({
         level: 'warn',
         message: `Measured ${kg(gross)} is less than the published kerb weight (${kg(kerb)}). Kerb weight includes a full tank; check the readings.`,
@@ -566,7 +574,7 @@ function limitStatus(value: number, limit: number | null, s: CheckSettings): Che
 }
 
 function tyreBasis(tyre: TyreSpec): string {
-  return tyre.loadKg != null ? `Rated ${kg(tyre.loadKg)} per tyre.` : `Load index ${tyre.loadIndex} = ${kg(loadIndexKg(tyre.loadIndex)!)} per tyre.`;
+  return hasLoadRating(tyre) ? `Rated ${kg(tyre.loadKg)} per tyre.` : `Load index ${tyre.loadIndex} = ${kg(loadIndexKg(tyre.loadIndex)!)} per tyre.`;
 }
 
 function limitCheck(

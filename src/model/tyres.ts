@@ -21,7 +21,12 @@ export function loadIndexKg(li: number | null | undefined): number | null {
 
 /** Rated load per tyre: the kg rating when given, otherwise from the load index. */
 export function tyreLoadKg(tyre: TyreSpec): number | null {
-  return tyre.loadKg ?? loadIndexKg(tyre.loadIndex);
+  return hasLoadRating(tyre) ? tyre.loadKg : loadIndexKg(tyre.loadIndex);
+}
+
+/** Whether a kg load rating is entered (0 or less counts as not entered). */
+export function hasLoadRating(tyre: TyreSpec): tyre is TyreSpec & { loadKg: number } {
+  return tyre.loadKg != null && tyre.loadKg > 0;
 }
 
 /**

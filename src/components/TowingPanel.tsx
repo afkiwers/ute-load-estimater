@@ -2,7 +2,7 @@ import type { CaravanReadings, TrailerKind } from '../model/types';
 import type { CaravanBaselineSource } from '../model/calc';
 import { kg, mm, pct } from '../model/format';
 import { axleCentre } from '../model/geometry';
-import { loadIndexKg } from '../model/tyres';
+import { hasLoadRating, loadIndexKg, tyreDiameter } from '../model/tyres';
 import { applyTrailerKind } from '../model/presets';
 import { TRAILER_KINDS, trailerInfo, trailerName } from '../model/trailers';
 import { useUi } from '../state/ui';
@@ -125,7 +125,7 @@ export function TowingPanel() {
             min={0}
             hint={`Measure along the ground. Front axle → ball: ${mm(setup.ute.wheelbase + setup.hitch.ballOffset)}.`}
           />
-          <NumField path="hitch.ballHeight" label="Ball height" unit="mm" nullable={false} min={100} />
+          <NumField path="hitch.ballHeight" label="Ball height" unit="mm" nullable={false} min={100} hint="For the 3D view; static loads don't depend on it." />
           <NumField path="hitch.towbarRating" label="Tow bar rating" hint="From the tow bar plate, if lower." />
           <NumField path="hitch.towbarBallRating" label="Tow bar ball rating" />
         </div>
@@ -264,18 +264,26 @@ export function TowingPanel() {
 
           <Section title={`${Tc} tyres`}>
             <div className="fields">
-              <TextField path="caravan.tyre.size" label="Tyre size" />
+              <TextField
+                path="caravan.tyre.size"
+                label="Tyre size"
+                hint={tyreDiameter(cv.tyre.size) ? undefined : "Not recognised, so the 3D wheels use a typical size and the axle spacing isn't checked. Write it like 265/60R18."}
+              />
               <NumField path="caravan.tyre.loadKg" label="Tyre load rating" hint="Per tyre, from the plate. Overrides the load index." />
               <NumField
                 path="caravan.tyre.loadIndex"
                 label="Load index"
                 unit="LI"
-                hint={indexKg ? `${kg(indexKg)} per tyre${cv.tyre.loadKg != null ? ', not used while a load rating is set' : ''}` : 'Printed after the tyre size, e.g. 121'}
+                hint={indexKg ? `${kg(indexKg)} per tyre${hasLoadRating(cv.tyre) ? ', not used while a load rating is set' : ''}` : 'Printed after the tyre size, e.g. 121'}
               />
             </div>
           </Section>
 
           <Section title={`${Tc} dimensions`} open={false}>
+            <p className="section-note">
+              Track sets how loads split between the sides. The other sizes shape the 3D model and where items sit; the {T}'s own weight comes from its
+              readings or plate.
+            </p>
             <div className="fields">
               <NumField path="caravan.track" label="Track" unit="mm" nullable={false} min={500} />
               <NumField path="caravan.bodyStart" label={labels.start} unit="mm" nullable={false} min={300} />

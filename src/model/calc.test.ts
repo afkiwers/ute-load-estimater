@@ -592,3 +592,22 @@ describe('moving the trailer axles', () => {
     expect(normalizeSetup(old).caravan.weighedAxles).toEqual([4900]);
   });
 });
+
+describe('inputs left at 0 or below', () => {
+  it('checks the weighbridge total against the tare weight', () => {
+    const ute = newSetup().ute;
+    const light = deriveUteBaseline({ ...emptyUteReadings(), front: 1300, rear: 1050 }, ute, settings);
+    expect(light.issues.some((i) => i.message.startsWith('Measured 2,350 kg is less than the tare weight (2,458 kg)'))).toBe(true);
+    const fine = deriveUteBaseline({ ...emptyUteReadings(), front: 1400, rear: 1100 }, ute, settings);
+    expect(fine.issues.some((i) => i.message.includes('tare weight'))).toBe(false);
+  });
+
+  it('takes a tyre load rating of 0 as not entered', () => {
+    const s = bareSetup();
+    s.towing = true;
+    s.caravan.tyre = { size: '265/60R18', loadIndex: 121, loadKg: 0 };
+    const tyre = compute(s).checks.find((c) => c.id === 'cvTyre_left')!;
+    expect(tyre.limit).toBe(1450);
+    expect(tyre.detail).toBe('Load index 121 = 1,450 kg per tyre.');
+  });
+});
