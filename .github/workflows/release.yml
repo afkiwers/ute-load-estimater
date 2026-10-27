@@ -1,0 +1,29 @@
+name: Release
+
+# Publishing a release on GitHub builds the single-file app from the tagged
+# commit and attaches it to the release as ute-load-estimator.html.
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - name: Attach ute-load-estimator.html to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$TAG" ute-load-estimator.html --clobber --repo "$GITHUB_REPOSITORY"

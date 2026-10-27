@@ -4,7 +4,7 @@ Plan and check the loading of a ute and the caravan it tows. Enter your weighbri
 
 ## Use it
 
-1. Download [`ute-load-estimator.html`](ute-load-estimator.html) (the "Download raw file" button on GitHub).
+1. Download [`ute-load-estimator.html` from the latest release](https://github.com/afkiwers/ute-load-estimater/releases/latest/download/ute-load-estimator.html), or the current development version from the repo root ([`ute-load-estimator.html`](ute-load-estimator.html), "Download raw file").
 2. Double-click it. It opens in Chrome straight from disk: no web server, no install, no internet needed.
 
 Your setups are saved in the browser automatically. Use **Export** to keep a backup file or move setups to another computer, and **Import** to load one.
@@ -58,6 +58,8 @@ npm run build    # typecheck, then build ute-load-estimator.html
 ```
 
 The build inlines everything (React, three.js, styles) into one HTML file so it runs from `file://`. It is written to `dist/index.html` and copied to `ute-load-estimator.html` at the repo root. CI checks that the committed file matches the source, so run `npm run build` and commit the result after changing the code.
+
+To release, publish a release on GitHub (Releases, "Draft a new release", pick or create a tag, Publish). The Release workflow builds the file from the tagged commit, runs the tests and attaches `ute-load-estimator.html` to the release; the "latest release" download link above always points at the newest one.
 
 Code map:
 
