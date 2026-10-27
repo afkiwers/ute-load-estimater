@@ -1,3 +1,9 @@
+> [!WARNING]
+> **Vibe-coded, for illustrative purposes only.** Ute Load Estimator was written largely with an AI assistant. Its
+> results look reasonable, but they have not all been validated against real weighbridge measurements. Check every
+> number yourself against your weighbridge dockets, vehicle placard, owner's manual and tow bar plate before you load
+> or tow: don't base safety or compliance decisions on this tool alone.
+
 # Ute Load Estimator
 
 Plan and check the loading of a ute and the caravan it tows. Enter your weighbridge readings and the manufacturer limits, drag accessories and gear onto a 3D model, and see the axle, wheel, tow ball and combination loads update against every limit.

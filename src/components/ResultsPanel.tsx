@@ -298,7 +298,10 @@ export function ResultsPanel() {
       <div className="check-group-title">Headroom</div>
       <Headroom />
 
-      <div style={{ height: 14 }} />
+      <p className="section-note" style={{ marginTop: 14 }}>
+        Written largely with an AI assistant and not validated against real weighbridge measurements. Check every result
+        yourself and confirm on a weighbridge before you load or tow.
+      </p>
       <Section title="Check settings" open={false}>
         <div className="fields">
           <NumField path="settings.tolAbs" label="Reading tolerance" nullable={false} min={0} />

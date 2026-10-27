@@ -210,7 +210,8 @@ export function Report() {
         </>
       )}
       <p className="meta">
-        Static estimate from weighbridge readings plus planned items. Always confirm on a weighbridge before travelling. Positions in mm:
+        Static estimate from weighbridge readings plus planned items, made with a tool written largely with an AI assistant and
+        not validated against real measurements. Check every figure and confirm on a weighbridge before travelling. Positions in mm:
         x behind the front axle (ute) or tow ball ({T}), y right of centre, z height.
       </p>
     </div>,
