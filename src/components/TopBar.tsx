@@ -1,7 +1,9 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import type { Setup } from '../model/types';
+import { BUILD, versionLabel } from '../build';
 import { useStore } from '../state/store';
 import { sceneBridge, useUi } from '../state/ui';
+import { AboutDialog } from './AboutDialog';
 
 function download(name: string, text: string) {
   const blob = new Blob([text], { type: 'application/json' });
@@ -38,6 +40,7 @@ export function TopBar() {
   const canUndo = useStore((s) => s.history.past.length > 0);
   const canRedo = useStore((s) => s.history.future.length > 0);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [about, setAbout] = useState(false);
   const active = setups[activeId];
 
   return (
@@ -109,6 +112,10 @@ export function TopBar() {
       <button className="tb-btn primary" onClick={printReport} title="Printable summary (save as PDF from the print dialog)">
         Report
       </button>
+      <button className="tb-btn tb-version" onClick={() => setAbout(true)} title="Version and build information">
+        {versionLabel(BUILD)}
+      </button>
+      {about && <AboutDialog onClose={() => setAbout(false)} />}
     </header>
   );
 }

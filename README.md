@@ -13,7 +13,7 @@ Plan and check the loading of a ute and the caravan it tows. Enter your weighbri
 ## Use it
 
 - **Online:** open [afkiwers.github.io/ute-load-estimater](https://afkiwers.github.io/ute-load-estimater/). It always runs the latest release.
-- **Offline:** download [`ute-load-estimator.html` from the latest release](https://github.com/afkiwers/ute-load-estimater/releases/latest/download/ute-load-estimator.html) and double-click it. It opens in Chrome straight from disk: no web server, no install, no internet needed. The current development version is in the repo root ([`ute-load-estimator.html`](ute-load-estimator.html), "Download raw file").
+- **Offline:** download [`ute-load-estimator.html` from the latest release](https://github.com/afkiwers/ute-load-estimater/releases/latest/download/ute-load-estimator.html) and double-click it. It opens in Chrome straight from disk: no web server, no install, no internet needed (only the update check in the About box goes online). The current development version is in the repo root ([`ute-load-estimator.html`](ute-load-estimator.html), "Download raw file").
 
 Your setups are saved in the browser automatically. The online page and a downloaded file keep separate lists, so use **Export** to keep a backup file or move setups to another computer or between the two, and **Import** to load one.
 
@@ -34,7 +34,7 @@ Readings already include what was on the vehicle when you weighed it. Tick **Was
 
 **Towing.** Pick what you tow: a caravan, a boat on its trailer, an enclosed trailer or an open (box) trailer. Each type starts with typical dimensions and plate values (marked as placeholders), its own 3D model and its own items in the palette (boat, motor and fuel for a boat; motorbikes, mowers and other cargo for trailers). Trailer readings (weighbridge total, tow ball scale, optional axle group, front and rear axle, and side loads), compliance plate (entered top to bottom as printed: tare mass, coupling load at tare mass, GTM, ATM, TGALR; the load capacity is worked out), tyres (load rating in kg as on the plate, or the load index from the tyre) and geometry. Choose a single or tandem axle and enter each axle's distance from the tow ball centre. Items inside or on the caravan move the ball weight. Checks: towing capacity, the trailer's plated ATM against the towing capacity (flagged even when the trailer is loaded lighter), tow ball download, tow bar ratings, GCM, ATM, GTM, the axle group against the TGALR (each tandem axle against half of it), caravan tyres, ball weight share (8 to 12% guideline) and front axle unloading. An optional weight distribution hitch restores a chosen share of the front axle load.
 
-**Also:** several named setups (duplicate one to compare loading plans), undo/redo, x-ray view to place items inside the cab or caravan, paint colours, and a printable report (save as PDF from the print dialog).
+**Also:** a version button in the top right corner opens an About box with the version, commit and build date, links, a button that copies them for bug reports, and a check for a newer release on GitHub. Several named setups (duplicate one to compare loading plans), undo/redo, x-ray view to place items inside the cab or caravan, paint colours, and a printable report (save as PDF from the print dialog).
 
 ## How the numbers are worked out
 

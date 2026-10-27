@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { WHEEL_IDS, overallStatus } from '../model/calc';
 import { kg, mm, num, pct } from '../model/format';
 import { tyreLoadKg } from '../model/tyres';
+import { BUILD, versionLabel } from '../build';
 import { trailerName } from '../model/trailers';
 import { useResult, useSetup } from '../state/result';
 import { useUi } from '../state/ui';
@@ -49,6 +50,7 @@ export function Report() {
       <div className="meta">
         {u.name} · {new Date().toLocaleString('en-AU')} · Overall: {STATUS_TEXT[status]}
         {setup.towing && ` · towing ${setup.caravan.name}`}
+        {` · Ute Load Estimator ${versionLabel(BUILD)}`}
       </div>
       {snapshot && <img src={snapshot} alt="3D view of the loaded vehicle" />}
 

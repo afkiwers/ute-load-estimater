@@ -17,9 +17,21 @@ const copyRelease = (): Plugin => ({
   },
 });
 
+// The release workflow stamps its builds with the tag, commit and dates. Other builds
+// stay unstamped, so building the same source always gives the same file.
+const build = {
+  version: process.env.APP_VERSION || null,
+  commit: process.env.APP_COMMIT || null,
+  commitDate: process.env.APP_COMMIT_DATE || null,
+  buildDate: process.env.APP_BUILD_DATE || null,
+};
+
 export default defineConfig({
   base: './',
   plugins: [react(), viteSingleFile(), copyRelease()],
+  define: {
+    __BUILD__: JSON.stringify(build),
+  },
   build: {
     outDir: 'dist',
     chunkSizeWarningLimit: 4000,

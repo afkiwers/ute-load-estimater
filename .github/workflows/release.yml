@@ -22,7 +22,15 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
-      - run: npm run build
+      - name: Build, stamped with the release
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          export APP_VERSION="$TAG"
+          export APP_COMMIT="$(git rev-parse HEAD)"
+          export APP_COMMIT_DATE="$(git log -1 --format=%cI)"
+          export APP_BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          npm run build
       - name: Attach ute-load-estimator.html to the release
         env:
           GH_TOKEN: ${{ github.token }}
