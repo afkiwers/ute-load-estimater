@@ -35,6 +35,7 @@ describe('build info', () => {
         'Running from: afkiwers.github.io',
         'React: 19.2.0',
         'three.js: r186',
+        'License: GPL-3.0-or-later',
         'Browser: Chrome',
       ].join('\n'),
     );

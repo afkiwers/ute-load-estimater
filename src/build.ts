@@ -19,6 +19,7 @@ export const BUILD: BuildStamp = __BUILD__;
 export const REPO_URL = 'https://github.com/afkiwers/ute-load-estimater';
 export const APP_URL = 'https://afkiwers.github.io/ute-load-estimater/';
 export const LATEST_RELEASE_API = 'https://api.github.com/repos/afkiwers/ute-load-estimater/releases/latest';
+export const LICENSE = 'GPL-3.0-or-later';
 
 export function versionLabel(b: BuildStamp): string {
   return b.version ?? 'dev';
@@ -63,6 +64,7 @@ export function versionRows(b: BuildStamp, rt: Runtime): AboutRow[] {
     { label: 'Running from', value: rt.protocol === 'file:' ? 'Downloaded file' : rt.host },
     { label: 'React', value: rt.react },
     { label: 'three.js', value: `r${rt.three}` },
+    { label: 'License', value: LICENSE, href: `${REPO_URL}/blob/main/LICENSE` },
   ];
 }
 
