@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import type { CaravanSpec, HitchSpec } from '../model/types';
 import { caravanGeometry, toWorld, type CaravanGeometry } from '../model/geometry';
 import { rimDiameter } from '../model/tyres';
-import { boxWorld } from './parts';
+import { boxWorld, surfaceData } from './parts';
 import { RBox, Strut, Wheel, useMaterials, type Materials } from './kit';
 
 interface Props {
@@ -24,6 +24,38 @@ interface BodyProps {
 }
 
 const yy = (side: number, a: number, b: number) => ({ y0: Math.min(side * a, side * b), y1: Math.max(side * a, side * b) });
+
+/** A solid body shell like the ute's; x-ray turns it into a faint ghost so the load inside can be seen and placed. */
+function useShellMaterial(xray: boolean, params: THREE.MeshPhysicalMaterialParameters) {
+  const mat = useMemo(
+    () => new THREE.MeshPhysicalMaterial({ ...params, ...(xray ? { transparent: true, opacity: 0.12, depthWrite: false } : {}) }),
+    [xray],
+  );
+  useEffect(() => () => mat.dispose(), [mat]);
+  return mat;
+}
+
+/** Outside of a closed body: a drop target unless in x-ray, when drops go through it to the floor inside. */
+const shellProps = (xray: boolean) => ({ castShadow: !xray, receiveShadow: !xray, userData: surfaceData(xray ? null : 'cvBody', 'caravan') });
+
+/** Checker plate between the A-frame rails, tapering with them towards the coupling. */
+function DrawbarPlate({ c, m, offset, railY }: { c: CaravanGeometry; m: Materials; offset: number; railY: number }) {
+  const geo = useMemo(() => {
+    const halfAt = (x: number) => (railY * (x - 150)) / (c.bodyStart - 150) - 30;
+    const x0 = c.drawbarStart;
+    const x1 = c.bodyStart - 20;
+    // Shape in the world X/Z plane; rotated so it extrudes downward from the top of the plate.
+    const pt = (x: number, y: number) => new THREE.Vector2(toWorld('caravan', { x, y, z: 0 }, offset)[0], y / 1000);
+    const shape = new THREE.Shape([pt(x0, -halfAt(x0)), pt(x1, -halfAt(x1)), pt(x1, halfAt(x1)), pt(x0, halfAt(x0))]);
+    const g = new THREE.ExtrudeGeometry(shape, { depth: 0.014, bevelEnabled: false });
+    g.rotateX(Math.PI / 2);
+    return g;
+  }, [c, offset, railY]);
+  useEffect(() => () => geo.dispose(), [geo]);
+  return (
+    <mesh geometry={geo} position={[0, c.drawbarZ / 1000, 0]} material={m.brushed} castShadow receiveShadow userData={surfaceData('cvDrawbar', 'caravan')} />
+  );
+}
 
 /** Drawbar, jockey wheel, running gear and (for small trailers) mudguards, shared by every trailer type. */
 function Chassis({ cv, c, m, offset, accent, hitch }: BodyProps & { hitch: HitchSpec }) {
@@ -59,15 +91,7 @@ function Chassis({ cv, c, m, offset, accent, hitch }: BodyProps & { hitch: Hitch
           <boxGeometry args={[a.length, 0.1, central ? 0.1 : 0.05]} />
         </mesh>
       ))}
-      {!central && (
-        <RBox
-          {...v}
-          b={{ x0: c.drawbarStart, x1: c.bodyStart - 20, y0: -0.3 * Math.min(cv.bodyWidth, 2000), y1: 0.3 * Math.min(cv.bodyWidth, 2000), z0: c.drawbarZ - 14, z1: c.drawbarZ }}
-          r={6}
-          material={m.brushed}
-          surface="cvDrawbar"
-        />
-      )}
+      {!central && <DrawbarPlate c={c} m={m} offset={offset} railY={railY} />}
       <mesh position={toWorld('caravan', { x: 520, y: 0, z: (c.drawbarZ + 120) / 2 }, offset)} material={m.chassis}>
         <cylinderGeometry args={[0.03, 0.03, (c.drawbarZ - 120) / 1000, 12]} />
       </mesh>
@@ -109,33 +133,28 @@ function Chassis({ cv, c, m, offset, accent, hitch }: BodyProps & { hitch: Hitch
 }
 
 function CaravanBody({ cv, c, m, offset, xray, accent }: BodyProps) {
-  const shellMat = useMemo(
-    () => new THREE.MeshPhysicalMaterial({ color: '#ffffff', roughness: 0.25, clearcoat: 0.6, transparent: true, opacity: xray ? 0.06 : 0.3, depthWrite: false }),
-    [xray],
-  );
-  useEffect(() => () => shellMat.dispose(), [shellMat]);
+  const shellMat = useShellMaterial(xray, { color: '#f2f3f1', metalness: 0.05, roughness: 0.35, clearcoat: 0.6, clearcoatRoughness: 0.2 });
   const v = { host: 'caravan' as const, offset };
   const half = cv.bodyWidth / 2;
   const L = cv.bodyLength;
   const fz = c.floorZ;
-  const shellBox = boxWorld('caravan', { x0: c.bodyStart, x1: c.bodyEnd, y0: -half, y1: half, z0: fz, z1: c.roofZ }, offset);
+  const shellBox = boxWorld('caravan', { x0: c.bodyStart, x1: c.bodyEnd, y0: -half, y1: half, z0: fz - 60, z1: c.roofZ }, offset);
   const dx = c.bodyStart + 0.34 * L;
   const strip = (b: { x0: number; x1: number; z0: number; z1: number }, k: string) => (
     <RBox key={k} {...v} b={{ ...b, ...yy(-1, half - 4, half + 10) }} r={8} material={m.gloss} shadow={false} />
   );
   return (
     <group>
-      <RBox {...v} b={{ x0: c.bodyStart + 20, x1: c.bodyEnd - 20, y0: -half + 20, y1: half - 20, z0: fz - 40, z1: fz }} r={10} material={floorMat} surface="cvFloor" />
-      {/* Rounded see-through shell so the load stays visible; solid roof unless x-ray */}
-      <RoundedBox args={shellBox.args} radius={0.14} smoothness={4} position={shellBox.position} material={shellMat} />
+      {/* Inset so its edge stays inside the shell's rounded bottom */}
+      <RBox {...v} b={{ x0: c.bodyStart + 80, x1: c.bodyEnd - 80, y0: -half + 80, y1: half - 80, z0: fz - 40, z1: fz }} r={10} material={floorMat} surface="cvFloor" />
+      <RoundedBox args={shellBox.args} radius={0.14} smoothness={4} position={shellBox.position} material={shellMat} {...shellProps(xray)} />
       {!xray && (
         <>
-          <RBox {...v} b={{ x0: c.bodyStart + 30, x1: c.bodyEnd - 30, y0: -half + 30, y1: half - 30, z0: c.roofZ - 60, z1: c.roofZ - 2 }} r={40} material={roofMat} surface="cvRoof" />
-          {/* Windows, entry door on the kerb (left) side, stripes */}
+          {/* Tinted windows, entry door on the kerb (left) side, stripes */}
           {[-1, 1].map((side) => (
             <group key={side}>
               {[0.16, 0.55, 0.85].map((f) => (
-                <RBox key={f} {...v} b={{ x0: c.bodyStart + f * L - 420, x1: c.bodyStart + f * L + 420, ...yy(side, half - 6, half + 8), z0: fz + 980, z1: fz + 1560 }} r={70} material={m.glass} shadow={false} />
+                <RBox key={f} {...v} b={{ x0: c.bodyStart + f * L - 420, x1: c.bodyStart + f * L + 420, ...yy(side, half - 6, half + 8), z0: fz + 980, z1: fz + 1560 }} r={70} material={m.gloss} shadow={false} />
               ))}
               <RBox {...v} b={{ x0: c.bodyStart + 60, x1: c.bodyEnd - 60, ...yy(side, half - 4, half + 6), z0: fz + 70, z1: fz + 300 }} r={20} material={stripeMat} />
               <RBox {...v} b={{ x0: c.bodyStart + 60, x1: c.bodyEnd - 60, ...yy(side, half - 4, half + 7), z0: fz + 322, z1: fz + 344 }} r={8} material={accent} />
@@ -144,12 +163,12 @@ function CaravanBody({ cv, c, m, offset, xray, accent }: BodyProps) {
           {strip({ x0: dx - 330, x1: dx - 300, z0: fz + 60, z1: fz + 1880 }, 'l')}
           {strip({ x0: dx + 300, x1: dx + 330, z0: fz + 60, z1: fz + 1880 }, 'r')}
           {strip({ x0: dx - 330, x1: dx + 330, z0: fz + 1850, z1: fz + 1880 }, 't')}
-          <RBox {...v} b={{ x0: dx - 200, x1: dx + 200, ...yy(-1, half - 4, half + 9), z0: fz + 1250, z1: fz + 1700 }} r={50} material={m.glass} shadow={false} />
+          <RBox {...v} b={{ x0: dx - 200, x1: dx + 200, ...yy(-1, half - 4, half + 9), z0: fz + 1250, z1: fz + 1700 }} r={50} material={m.gloss} shadow={false} />
           <RBox {...v} b={{ x0: dx + 210, x1: dx + 260, ...yy(-1, half - 4, half + 24), z0: fz + 950, z1: fz + 1000 }} r={8} material={m.chrome} />
           {/* Front: window and stone guard. Rear: window and tail lights. */}
-          <RBox {...v} b={{ x0: c.bodyStart - 8, x1: c.bodyStart + 6, y0: -half * 0.6, y1: half * 0.6, z0: fz + 950, z1: fz + 1500 }} r={60} material={m.glass} shadow={false} />
+          <RBox {...v} b={{ x0: c.bodyStart - 8, x1: c.bodyStart + 6, y0: -half * 0.6, y1: half * 0.6, z0: fz + 950, z1: fz + 1500 }} r={60} material={m.gloss} shadow={false} />
           <RBox {...v} b={{ x0: c.bodyStart - 14, x1: c.bodyStart + 4, y0: -half + 90, y1: half - 90, z0: fz + 30, z1: fz + 560 }} r={20} material={m.brushed} />
-          <RBox {...v} b={{ x0: c.bodyEnd - 6, x1: c.bodyEnd + 8, y0: -half * 0.45, y1: half * 0.45, z0: fz + 1050, z1: fz + 1450 }} r={50} material={m.glass} shadow={false} />
+          <RBox {...v} b={{ x0: c.bodyEnd - 6, x1: c.bodyEnd + 8, y0: -half * 0.45, y1: half * 0.45, z0: fz + 1050, z1: fz + 1450 }} r={50} material={m.gloss} shadow={false} />
           {[-1, 1].map((side) => (
             <RBox key={side} {...v} b={{ x0: c.bodyEnd - 4, x1: c.bodyEnd + 12, ...yy(side, half - 260, half - 80), z0: fz + 150, z1: fz + 270 }} r={12} material={m.red} />
           ))}
@@ -173,11 +192,7 @@ function TailLights({ c, m, offset, half, z }: { c: CaravanGeometry; m: Material
 }
 
 function EnclosedBody({ cv, c, m, offset, xray }: BodyProps) {
-  const shellMat = useMemo(
-    () => new THREE.MeshPhysicalMaterial({ color: '#3a4048', metalness: 0.3, roughness: 0.35, clearcoat: 0.4, transparent: true, opacity: xray ? 0.06 : 0.35, depthWrite: false }),
-    [xray],
-  );
-  useEffect(() => () => shellMat.dispose(), [shellMat]);
+  const shellMat = useShellMaterial(xray, { color: '#3a4048', metalness: 0.3, roughness: 0.35, clearcoat: 0.4 });
   const v = { host: 'caravan' as const, offset };
   const half = cv.bodyWidth / 2;
   const fz = c.floorZ;
@@ -185,7 +200,7 @@ function EnclosedBody({ cv, c, m, offset, xray }: BodyProps) {
   return (
     <group>
       <RBox {...v} b={{ x0: c.bodyStart, x1: c.bodyEnd, y0: -half, y1: half, z0: fz - 50, z1: fz }} r={8} material={floorMat} surface="cvFloor" />
-      <RoundedBox args={shellBox.args} radius={0.04} smoothness={3} position={shellBox.position} material={shellMat} />
+      <RoundedBox args={shellBox.args} radius={0.04} smoothness={3} position={shellBox.position} material={shellMat} {...shellProps(xray)} />
       {!xray && (
         <>
           <RBox {...v} b={{ x0: c.bodyStart, x1: c.bodyEnd, y0: -half, y1: half, z0: c.roofZ - 40, z1: c.roofZ + 10 }} r={20} material={m.brushed} surface="cvRoof" />
@@ -288,6 +303,5 @@ export function TrailerModel({ caravan: cv, hitch, offset, xray }: Props) {
 const floorMat = new THREE.MeshStandardMaterial({ color: '#b9a27f', roughness: 0.85 });
 const deckMat = new THREE.MeshStandardMaterial({ color: '#8f969d', metalness: 0.6, roughness: 0.45 });
 const bunkMat = new THREE.MeshStandardMaterial({ color: '#4a3f36', roughness: 0.95 });
-const roofMat = new THREE.MeshPhysicalMaterial({ color: '#f6f6f4', roughness: 0.3, clearcoat: 0.5 });
 const stripeMat = new THREE.MeshStandardMaterial({ color: '#3a4048', roughness: 0.4, metalness: 0.3 });
 const accentMat = new THREE.MeshStandardMaterial({ color: '#d9590f', roughness: 0.4 });
