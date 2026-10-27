@@ -726,6 +726,24 @@ export function compute(setup: Setup): Result {
         hitch.wdh.enabled ? `Static ball weight. With the WDH tensioned the ute carries ${kg(hitchResult.netHitch)} at the hitch.` : undefined),
     );
     if (hitch.towbarRating) checks.push(limitCheck(s, 'towbarRating', 'Towing', `${Tc} mass vs tow bar rating`, c.mass, hitch.towbarRating));
+    // A plate that allows loading the trailer past what the ute may tow is over, however it is loaded today.
+    const maxTow = minOf(towCap, hitch.towbarRating);
+    const atm = cv.limits.atm;
+    if (atm && maxTow) {
+      const by = maxTow === towCap ? `the ute's ${cv.hasBrakes ? 'braked' : 'unbraked'} towing capacity` : 'the tow bar rating';
+      checks.push({
+        id: 'atmVsTow',
+        group: 'Towing',
+        label: `${Tc} ATM vs towing capacity`,
+        value: atm,
+        limit: maxTow,
+        unit: 'kg',
+        status: atm > maxTow ? 'over' : 'ok',
+        detail: atm > maxTow
+          ? `The ${T} is plated for ${kg(atm)}, ${kg(atm - maxTow)} more than ${by} (${kg(maxTow)}). Loaded to its plate it would be over, and some states and insurers require the ATM itself to be within the towing capacity.`
+          : `Within ${by}.`,
+      });
+    }
     if (hitch.towbarBallRating) checks.push(limitCheck(s, 'towbarBall', 'Towing', 'Ball download vs tow bar rating', B, hitch.towbarBallRating));
     checks.push(limitCheck(s, 'gcm', 'Towing', 'Gross combination mass (GCM)', unhitchedGross + c.mass, lim.gcm,
       `Ute ${kg(unhitchedGross)} + ${T} ${kg(c.mass)}.`));
@@ -781,19 +799,6 @@ export function compute(setup: Setup): Result {
       limitCheck(s, 'cvTyre_left', 'Trailer', `${Tc} left tyre${n > 1 ? ' (heaviest)' : ''}`, sideTyre(c.axleLeft), cvTyreKg, cvTyreNote),
       limitCheck(s, 'cvTyre_right', 'Trailer', `${Tc} right tyre${n > 1 ? ' (heaviest)' : ''}`, sideTyre(c.axleRight), cvTyreKg, cvTyreNote),
     );
-    if (cv.limits.atm && towCap && cv.limits.atm > towCap) {
-      checks.push({
-        id: 'atmVsTow',
-        group: 'Trailer',
-        label: 'Plated ATM vs towing capacity',
-        value: cv.limits.atm,
-        limit: towCap,
-        unit: 'kg',
-        advisory: true,
-        status: 'warn',
-        detail: `The ${T} is rated to be loaded heavier than the ute may tow. The actual mass is what counts, but you can overload it without noticing.`,
-      });
-    }
   }
 
   const towCap = cv.hasBrakes ? lim.brakedTow : lim.unbrakedTow;

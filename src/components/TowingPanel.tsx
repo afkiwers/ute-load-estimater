@@ -69,6 +69,7 @@ export function TowingPanel() {
   const indexKg = loadIndexKg(cv.tyre.loadIndex);
   const { atm, tare } = cv.limits;
   const loadCapacity = atm != null && tare != null ? atm - tare : null;
+  const atmOverTow = result.checks.find((c) => c.id === 'atmVsTow' && c.status === 'over');
   const tandem = cv.axles.length > 1;
   const T = trailerName(cv.kind);
   const Tc = trailerName(cv.kind, true);
@@ -190,7 +191,12 @@ export function TowingPanel() {
               <NumField path="caravan.limits.tareBall" label="Coupling load at tare mass" />
               <NumField path="caravan.limits.gtm" label="GTM" />
               <ReadField label="Load capacity" value={loadCapacity} hint="ATM minus tare mass." />
-              <NumField path="caravan.limits.atm" label="ATM" />
+              <NumField
+                path="caravan.limits.atm"
+                label="ATM"
+                flag={atmOverTow ? 'error' : null}
+                hint={atmOverTow ? `More than the ute may tow (${kg(atmOverTow.limit!)}).` : undefined}
+              />
               <NumField path="caravan.limits.tgalr" label="TGALR" hint={`Trailer gross axle load rating: what the axle group may carry${tandem ? ', shared by both axles' : ''}.`} />
             </div>
             <div style={{ marginTop: 8 }}>

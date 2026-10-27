@@ -102,7 +102,7 @@ function CaravanLabels({ setup, result, offset }: { setup: Setup; result: Result
           </Tag>
         </>
       )}
-      <Tag host="caravan" offset={offset} p={{ x: (c.bodyStart + c.bodyEnd) / 2, y: 0, z: c.roofZ + 450 }} status={statusOf(checks, 'atm')}>
+      <Tag host="caravan" offset={offset} p={{ x: (c.bodyStart + c.bodyEnd) / 2, y: 0, z: c.roofZ + 450 }} status={worse(statusOf(checks, 'atm'), statusOf(checks, 'atmVsTow'))}>
         {trailerName(cv.kind, true)} <b>{num(cr.mass)}</b>
         {cv.limits.atm ? ` / ATM ${num(cv.limits.atm)}` : ''} kg
       </Tag>
