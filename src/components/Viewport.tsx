@@ -19,8 +19,8 @@ const GAUGES: { id: string; label: string }[] = [
   { id: 'towCapacity', label: 'Towing cap.' },
   { id: 'towBall', label: 'Ball' },
   { id: 'gcm', label: 'GCM' },
-  { id: 'atm', label: 'Van ATM' },
-  { id: 'gtm', label: 'Van GTM' },
+  { id: 'atm', label: 'ATM' },
+  { id: 'gtm', label: 'GTM' },
 ];
 
 function Gauge({ c, label }: { c: Check; label: string }) {
@@ -85,7 +85,7 @@ function ViewToolbar() {
             Ute
           </button>
           <button className={view === 'caravan' ? 'on' : ''} onClick={() => ui.setView('caravan')}>
-            Caravan
+            Trailer
           </button>
         </div>
       )}
@@ -93,7 +93,7 @@ function ViewToolbar() {
         <button className={labels ? 'on' : ''} onClick={() => ui.setLabels(!labels)} title="Wheel loads and dimensions">
           Labels
         </button>
-        <button className={xray ? 'on' : ''} onClick={() => ui.setXray(!xray)} title="See through the body and roofs to place items inside the cab or caravan">
+        <button className={xray ? 'on' : ''} onClick={() => ui.setXray(!xray)} title="See through the body and roofs to place items inside the cab or trailer">
           X-ray
         </button>
       </div>
@@ -137,7 +137,7 @@ export function Viewport() {
     paletteDrag.current = null;
     if (!p) return;
     if (!p.placement) {
-      ui.showToast('Drop it onto the ute or the caravan.');
+      ui.showToast('Drop it onto the ute or the trailer.');
       return;
     }
     const setup = activeSetup();

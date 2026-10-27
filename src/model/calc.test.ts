@@ -7,7 +7,8 @@ import {
   deriveUteBaseline,
   uteShare,
 } from './calc';
-import { ITEM_TEMPLATES, itemFromTemplate, newSetup, defaultSettings, emptyCaravanReadings, emptyUteReadings } from './presets';
+import { ITEM_TEMPLATES, applyTrailerKind, itemFromTemplate, newSetup, defaultSettings, emptyCaravanReadings, emptyUteReadings } from './presets';
+import { TRAILER_KINDS, trailerPreset } from './trailers';
 import type { LoadItem, Setup } from './types';
 import { loadIndexKg, rimDiameter, tyreDiameter } from './tyres';
 import { axleCentre } from './geometry';
@@ -417,5 +418,67 @@ describe('caravan front and rear axle weights', () => {
     const s = normalizeSetup(old);
     expect(s.caravan.limits.axleRating).toBe(1600);
     expect(s.placeholders).toContain('caravan.limits.axleRating');
+  });
+});
+
+describe('trailer types', () => {
+  it.each(TRAILER_KINDS.map((k) => k.kind))('has a consistent %s preset', (kind) => {
+    const cv = trailerPreset(kind);
+    expect(cv.kind).toBe(kind);
+    // Axles sit under the body, the tare ball weight is a sensible share, and the plate adds up.
+    for (const x of cv.axles) {
+      expect(x).toBeGreaterThan(cv.bodyStart);
+      expect(x).toBeLessThan(cv.bodyStart + cv.bodyLength);
+    }
+    const ballPct = (cv.limits.tareBall! / cv.limits.tare!) * 100;
+    expect(ballPct).toBeGreaterThan(5);
+    expect(ballPct).toBeLessThan(15);
+    expect(cv.limits.gtm!).toBeLessThanOrEqual(cv.limits.atm!);
+    expect(cv.limits.axleRating! * cv.axles.length).toBeGreaterThanOrEqual(cv.limits.gtm!);
+  });
+
+  it('switches type: new preset, readings cleared, old trailer items removed', () => {
+    const s = newSetup();
+    s.caravanReadings.total = 2600;
+    s.items.push(itemFromTemplate(ITEM_TEMPLATES.find((t) => t.id === 'gas')!, s));
+    s.placeholders = s.placeholders.filter((p) => p !== 'caravan.limits.atm');
+    applyTrailerKind(s, 'open');
+    expect(s.caravan.kind).toBe('open');
+    expect(s.caravan.hasBrakes).toBe(false);
+    expect(s.caravanReadings.total).toBeNull();
+    expect(s.items.some((i) => i.host === 'caravan')).toBe(false);
+    expect(s.items.some((i) => i.templateId === 'driver')).toBe(true);
+    expect(s.placeholders).toContain('caravan.limits.atm');
+    expect(s.placeholders).not.toContain('caravan.axles.1');
+  });
+
+  it('puts the boat, motor and fuel on a boat trailer with a sensible ball weight', () => {
+    const s = newSetup();
+    applyTrailerKind(s, 'boat');
+    const boatItems = s.items.filter((i) => i.host === 'caravan');
+    expect(boatItems.map((i) => i.templateId)).toEqual(['boatHull', 'outboard', 'boatFuel']);
+    const hull = boatItems[0];
+    const motor = boatItems[1];
+    // Motor hangs off the transom, fuel sits inside the hull.
+    expect(motor.pos.x).toBeGreaterThan(hull.pos.x + hull.size.l / 2 - 200);
+    expect(boatItems[2].pos.z).toBeLessThan(hull.pos.z + hull.size.h / 2);
+    const r = compute(s);
+    expect(r.caravan!.ballPct).toBeGreaterThan(7);
+    expect(r.caravan!.ballPct).toBeLessThan(13);
+    expect(r.checks.find((c) => c.id === 'atm')!.label).toBe('Boat trailer mass vs ATM');
+  });
+
+  it('checks an unbraked trailer against the unbraked towing capacity', () => {
+    const s = newSetup();
+    applyTrailerKind(s, 'open');
+    const tow = compute(s).checks.find((c) => c.id === 'towCapacity')!;
+    expect(tow.label).toBe('Trailer mass vs unbraked towing capacity');
+    expect(tow.limit).toBe(s.ute.limits.unbrakedTow);
+  });
+
+  it('keeps old saves as caravans', () => {
+    const old = structuredClone(newSetup()) as unknown as Record<string, any>;
+    delete old.caravan.kind;
+    expect(normalizeSetup(old).caravan.kind).toBe('caravan');
   });
 });

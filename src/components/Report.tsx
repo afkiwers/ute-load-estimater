@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { WHEEL_IDS, overallStatus } from '../model/calc';
 import { kg, mm, num, pct } from '../model/format';
 import { loadIndexKg } from '../model/tyres';
+import { trailerName } from '../model/trailers';
 import { useResult, useSetup } from '../state/result';
 import { useUi } from '../state/ui';
 import { STATUS_TEXT } from './ResultsPanel';
@@ -37,6 +38,8 @@ export function Report() {
     document.body.appendChild(host);
   }
   const u = setup.ute;
+  const T = trailerName(setup.caravan.kind);
+  const Tc = trailerName(setup.caravan.kind, true);
   const status = overallStatus(r);
   const r2 = r.ute.total;
 
@@ -131,18 +134,18 @@ export function Report() {
               {r.caravan && r.hitch && (
                 <>
                   <tr>
-                    <td>Caravan mass / ball</td>
+                    <td>{Tc} mass / ball</td>
                     <td className="r">
                       {kg(r.caravan.mass)} / {kg(r.hitch.ball)} ({pct(r.caravan.ballPct)})
                     </td>
                   </tr>
                   <tr>
-                    <td>Caravan axle group</td>
+                    <td>{Tc} axle group</td>
                     <td className="r">{kg(r.caravan.axle)}</td>
                   </tr>
                   {r.caravan.axleLoads.length > 1 && (
                     <tr>
-                      <td>Caravan front / rear axle</td>
+                      <td>{Tc} front / rear axle</td>
                       <td className="r">
                         {r.caravan.axleLoads.map((x) => num(x)).join(' / ')} kg
                         {setup.caravan.limits.axleRating ? ` (rating ${num(setup.caravan.limits.axleRating)} each)` : ''}
@@ -150,7 +153,7 @@ export function Report() {
                     </tr>
                   )}
                   <tr>
-                    <td>Tow ball → caravan {setup.caravan.axles.length > 1 ? 'axles' : 'axle'}</td>
+                    <td>Tow ball → {T} {setup.caravan.axles.length > 1 ? 'axles' : 'axle'}</td>
                     <td className="r">{setup.caravan.axles.map((x) => num(x)).join(' / ')} mm</td>
                   </tr>
                   <tr>
@@ -158,7 +161,7 @@ export function Report() {
                     <td className="r">{setup.hitch.wdh.enabled ? `${pct(setup.hitch.wdh.restorePct)} front restore` : 'none'}</td>
                   </tr>
                   <tr>
-                    <td>Caravan baseline</td>
+                    <td>{Tc} baseline</td>
                     <td className="r">{SOURCE[r.caravan.baseline.source]}</td>
                   </tr>
                 </>
@@ -208,7 +211,7 @@ export function Report() {
       )}
       <p className="meta">
         Static estimate from weighbridge readings plus planned items. Always confirm on a weighbridge before travelling. Positions in mm:
-        x behind the front axle (ute) or coupling (caravan), y right of centre, z height.
+        x behind the front axle (ute) or tow ball ({T}), y right of centre, z height.
       </p>
     </div>,
     host,

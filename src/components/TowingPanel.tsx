@@ -1,8 +1,11 @@
-import type { CaravanReadings } from '../model/types';
+import type { CaravanReadings, TrailerKind } from '../model/types';
 import type { CaravanBaselineSource } from '../model/calc';
 import { kg, mm, pct } from '../model/format';
 import { axleCentre } from '../model/geometry';
 import { loadIndexKg } from '../model/tyres';
+import { applyTrailerKind } from '../model/presets';
+import { TRAILER_KINDS, trailerInfo, trailerName } from '../model/trailers';
+import { useUi } from '../state/ui';
 import { useStore } from '../state/store';
 import { useResult, useSetup } from '../state/result';
 import { IssueList, NumField, Section, TextField, Toggle, flagFor } from './fields';
@@ -12,6 +15,48 @@ const SOURCE_TEXT: Record<CaravanBaselineSource, string> = {
   partial: 'Baseline: partly estimated',
   spec: 'Baseline: plated tare (not weighed yet)',
 };
+
+/** Small side-on silhouettes for the trailer type picker. */
+function KindIcon({ kind }: { kind: TrailerKind }) {
+  const wheel = (cx: number) => <circle cx={cx} cy="23" r="4" fill="currentColor" />;
+  const bar = <path d="M2 19h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />;
+  return (
+    <svg width="44" height="28" viewBox="0 0 44 28" aria-hidden="true">
+      {bar}
+      {kind === 'caravan' && <rect x="11" y="4" width="30" height="16" rx="4" fill="currentColor" opacity="0.85" />}
+      {kind === 'enclosed' && <rect x="12" y="6" width="26" height="14" rx="1.5" fill="currentColor" opacity="0.85" />}
+      {kind === 'open' && <path d="M12 12h26v8H12z M12 12v-2 M38 12v-2" fill="currentColor" stroke="currentColor" strokeWidth="1.5" opacity="0.85" />}
+      {kind === 'boat' && (
+        <>
+          <path d="M10 12h24l6-4v4l-3 6H13z" fill="currentColor" opacity="0.85" />
+          <path d="M12 19h26" stroke="currentColor" strokeWidth="1.5" />
+        </>
+      )}
+      {kind === 'caravan' || kind === 'enclosed' ? (
+        <>
+          {wheel(24)}
+          {wheel(31)}
+        </>
+      ) : (
+        wheel(kind === 'boat' ? 30 : 26)
+      )}
+    </svg>
+  );
+}
+
+/** Field labels for the trailer body, which means something different on a boat trailer. */
+function bodyLabels(kind: TrailerKind) {
+  if (kind === 'boat') {
+    return { start: 'Tow ball → winch post', length: 'Bunk frame length', width: 'Bunk frame width', height: null, floor: 'Bunk height' };
+  }
+  return {
+    start: 'Tow ball → body front',
+    length: 'Body length',
+    width: 'Body width',
+    height: kind === 'open' ? 'Side height' : kind === 'enclosed' ? 'Body height (inside)' : 'Body height',
+    floor: 'Floor height',
+  };
+}
 
 export function TowingPanel() {
   const setup = useSetup();
@@ -23,6 +68,20 @@ export function TowingPanel() {
   const issues = base?.issues ?? [];
   const tyreKg = loadIndexKg(cv.tyre.loadIndex);
   const tandem = cv.axles.length > 1;
+  const T = trailerName(cv.kind);
+  const Tc = trailerName(cv.kind, true);
+  const labels = bodyLabels(cv.kind);
+
+  const switchKind = (kind: TrailerKind) => {
+    if (kind === cv.kind) return;
+    const info = trailerInfo(kind);
+    const onTrailer = setup.items.filter((i) => i.host === 'caravan' || i.measured?.host === 'caravan').length;
+    const removes = onTrailer ? ` and removes the ${onTrailer} item${onTrailer === 1 ? '' : 's'} on the current ${T}` : '';
+    if (!confirm(`Switch to ${info.label.toLowerCase()}? This loads typical values for it (marked as placeholders), clears the ${T} readings${removes}. You can undo it.`)) return;
+    update((s) => applyTrailerKind(s, kind));
+    useUi.getState().select(null);
+    useUi.getState().setView('iso');
+  };
 
   const reading = (key: keyof CaravanReadings, label: string, hint?: string) => (
     <NumField path={`caravanReadings.${key}`} label={label} hint={hint} derived={base?.derived[key] ?? null} flag={flagFor(issues, `caravanReadings.${key}`)} />
@@ -30,10 +89,27 @@ export function TowingPanel() {
 
   return (
     <div className="tab-body">
-      <label className="toggle" style={{ marginBottom: 10, fontWeight: 600 }}>
+      <label className="toggle" style={{ marginBottom: 8, fontWeight: 600 }}>
         <input type="checkbox" checked={setup.towing} onChange={(e) => setPath('towing', e.target.checked)} />
-        Towing a caravan
+        Towing
       </label>
+      {setup.towing && (
+        <div className="kinds" role="radiogroup" aria-label="Trailer type">
+          {TRAILER_KINDS.map((k) => (
+            <button
+              key={k.kind}
+              role="radio"
+              aria-checked={cv.kind === k.kind}
+              className={`kind${cv.kind === k.kind ? ' on' : ''}`}
+              title={k.description}
+              onClick={() => switchKind(k.kind)}
+            >
+              <KindIcon kind={k.kind} />
+              <span>{k.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       <Section title="Tow bar">
         <div className="fields">
@@ -73,18 +149,22 @@ export function TowingPanel() {
                 {result.hitch && (
                   <p className="section-note" style={{ marginTop: 6 }}>
                     Moves {kg(result.hitch.wdhMoment / setup.ute.wheelbase)} from the rear to the front axle and{' '}
-                    {kg(result.hitch.wdhToCaravan)} onto the caravan axles. The ute now carries {kg(result.hitch.netHitch)} at the hitch.
+                    {kg(result.hitch.wdhToCaravan)} onto the {T} axles. The ute now carries {kg(result.hitch.netHitch)} at the hitch.
                   </p>
                 )}
               </>
             )}
           </Section>
 
-          <Section title="Caravan readings" extra="unhitched">
-            <p className="section-note">Weighbridge (whole caravan off the car) plus a tow ball scale, caravan level. Side loads are optional.</p>
+          <Section title={`${Tc} readings`} extra="unhitched">
+            <p className="section-note">
+              Weighbridge (whole {T} off the car) plus a tow ball scale, {T} level. Side loads are optional.
+              {cv.kind === 'boat' &&
+                ' If you weigh with the boat on, mark the boat, motor and fuel as weighed in the Items tab so they are not counted twice.'}
+            </p>
             {base && <div className="source-badge">{SOURCE_TEXT[base.source]}</div>}
             <div className="fields">
-              {reading('total', 'Caravan total')}
+              {reading('total', `${Tc} total`)}
               {reading('ball', 'Ball weight')}
               {reading('axle', 'Axle group')}
               <div />
@@ -101,7 +181,7 @@ export function TowingPanel() {
             <IssueList issues={issues} />
           </Section>
 
-          <Section title="Caravan plate">
+          <Section title={`${Tc} plate`}>
             <div className="fields">
               <NumField path="caravan.limits.atm" label="ATM" />
               <NumField path="caravan.limits.gtm" label="GTM" />
@@ -159,21 +239,21 @@ export function TowingPanel() {
             )}
           </Section>
 
-          <Section title="Caravan tyres">
+          <Section title={`${Tc} tyres`}>
             <div className="fields">
               <TextField path="caravan.tyre.size" label="Size" />
               <NumField path="caravan.tyre.loadIndex" label="Load index" unit="LI" hint={tyreKg ? `${kg(tyreKg)} per tyre` : undefined} />
             </div>
           </Section>
 
-          <Section title="Caravan dimensions" open={false}>
+          <Section title={`${Tc} dimensions`} open={false}>
             <div className="fields">
               <NumField path="caravan.track" label="Track" unit="mm" nullable={false} min={500} />
-              <NumField path="caravan.bodyStart" label="Tow ball → body front" unit="mm" nullable={false} min={300} />
-              <NumField path="caravan.bodyLength" label="Body length" unit="mm" nullable={false} min={1000} />
-              <NumField path="caravan.bodyWidth" label="Body width" unit="mm" nullable={false} min={1000} />
-              <NumField path="caravan.bodyHeight" label="Body height" unit="mm" nullable={false} min={500} />
-              <NumField path="caravan.floorHeight" label="Floor height" unit="mm" nullable={false} min={200} />
+              <NumField path="caravan.bodyStart" label={labels.start} unit="mm" nullable={false} min={300} />
+              <NumField path="caravan.bodyLength" label={labels.length} unit="mm" nullable={false} min={1000} />
+              <NumField path="caravan.bodyWidth" label={labels.width} unit="mm" nullable={false} min={800} />
+              {labels.height && <NumField path="caravan.bodyHeight" label={labels.height} unit="mm" nullable={false} min={100} />}
+              <NumField path="caravan.floorHeight" label={labels.floor} unit="mm" nullable={false} min={200} />
             </div>
           </Section>
         </>

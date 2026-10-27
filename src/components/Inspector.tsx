@@ -3,6 +3,7 @@ import { capacityAt } from '../model/calc';
 import { kg, mm, num } from '../model/format';
 import { uid } from '../model/presets';
 import { axleCentre } from '../model/geometry';
+import { trailerName } from '../model/trailers';
 import type { ItemShape, LoadItem } from '../model/types';
 import { useStore } from '../state/store';
 import { useResult, useSetup } from '../state/result';
@@ -66,7 +67,7 @@ export function Inspector() {
       : relRear > 0
         ? `${mm(relRear)} behind the rear axle`
         : `between the axles, ${mm(-relRear)} ahead of the rear axle`
-    : `${mm(Math.abs(item.pos.x - vanAxles))} ${item.pos.x > vanAxles ? 'behind' : 'ahead of'} ${setup.caravan.axles.length > 1 ? 'the centre of the caravan axles' : 'the caravan axle'}`;
+    : `${mm(Math.abs(item.pos.x - vanAxles))} ${item.pos.x > vanAxles ? 'behind' : 'ahead of'} ${setup.caravan.axles.length > 1 ? `the centre of the ${trailerName(setup.caravan.kind)} axles` : `the ${trailerName(setup.caravan.kind)} axle`}`;
   const m = item.measured;
   const moved = m && (m.host !== item.host || Math.hypot(m.pos.x - item.pos.x, m.pos.y - item.pos.y, m.pos.z - item.pos.z) > 5);
   const ignored = item.host === 'caravan' && !setup.towing;
@@ -93,6 +94,8 @@ export function Inspector() {
                 <option value="cylinder">Cylinder</option>
                 <option value="person">Person</option>
                 <option value="bullbar">Bull bar</option>
+                <option value="boat">Boat hull</option>
+                <option value="outboard">Outboard motor</option>
               </select>
             </span>
           </Labeled>
@@ -156,7 +159,7 @@ export function Inspector() {
         )}
 
         {ignored ? (
-          <div className="callout">Towing is off, so caravan items carry no load.</div>
+          <div className="callout">Towing is off, so {trailerName(setup.caravan.kind)} items carry no load.</div>
         ) : (
           <>
             <div className="callout">

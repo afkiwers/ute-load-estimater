@@ -1,6 +1,7 @@
 import type { Check, CheckGroup, CheckStatus } from '../model/calc';
 import { WHEEL_IDS, overallStatus } from '../model/calc';
 import { kg, num, pct, signedKg } from '../model/format';
+import { trailerName } from '../model/trailers';
 import { useResult, useSetup } from '../state/result';
 import { IssueList, NumField, Section } from './fields';
 
@@ -71,7 +72,7 @@ function CheckRow({ c }: { c: Check }) {
   );
 }
 
-const GROUPS: CheckGroup[] = ['Vehicle', 'Tyres', 'Towing', 'Caravan'];
+const GROUPS: CheckGroup[] = ['Vehicle', 'Tyres', 'Towing', 'Trailer'];
 
 export function Headline() {
   const result = useResult();
@@ -178,7 +179,7 @@ function LoadTable() {
         <table className="loads" style={{ marginTop: 10 }}>
           <thead>
             <tr>
-              <th>Caravan (kg)</th>
+              <th>{trailerName(setup.caravan.kind, true)} (kg)</th>
               <th>Baseline</th>
               <th>Items</th>
               <th>WDH</th>
@@ -221,7 +222,7 @@ function LoadTable() {
                 );
               })}
             <tr className="total">
-              <td>Caravan mass</td>
+              <td>{trailerName(setup.caravan.kind, true)} mass</td>
               <td>{num(r.caravan.baseline.loads.ball + r.caravan.baseline.loads.left + r.caravan.baseline.loads.right)}</td>
               <td>{signedKg(r.caravan.items.ball + r.caravan.items.left + r.caravan.items.right).replace(' kg', '')}</td>
               <td>–</td>
@@ -259,7 +260,7 @@ function Headroom() {
       {stat('Spare rear axle', h.rearAxle)}
       {setup.towing ? stat('Spare GCM', h.gcm) : stat('Ute mass now', r.ute.gross)}
       <div style={{ gridColumn: '1 / -1' }}>
-        {stat('Heaviest caravan you could tow as the ute is loaded', h.maxCaravan, h.maxCaravanBy ? `Limited by ${h.maxCaravanBy}.` : undefined)}
+        {stat('Heaviest trailer you could tow as the ute is loaded', h.maxCaravan, h.maxCaravanBy ? `Limited by ${h.maxCaravanBy}.` : undefined)}
       </div>
     </div>
   );
@@ -267,6 +268,7 @@ function Headroom() {
 
 export function ResultsPanel() {
   const result = useResult();
+  const setup = useSetup();
   return (
     <div className="tab-body">
       <Headline />
@@ -275,7 +277,7 @@ export function ResultsPanel() {
         if (!checks.length) return null;
         return (
           <div key={g}>
-            <div className="check-group-title">{g}</div>
+            <div className="check-group-title">{g === 'Trailer' ? trailerName(setup.caravan.kind, true) : g}</div>
             {checks.map((c) => (
               <CheckRow key={c.id} c={c} />
             ))}

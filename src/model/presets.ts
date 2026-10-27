@@ -1,6 +1,5 @@
 import type {
   CaravanReadings,
-  CaravanSpec,
   CheckSettings,
   HitchSpec,
   Host,
@@ -8,11 +7,13 @@ import type {
   ItemSize,
   LoadItem,
   Setup,
+  TrailerKind,
   UteReadings,
   UteSpec,
   Vec3,
 } from './types';
 import { anchorPlacement, type Anchor } from './geometry';
+import { trailerPlaceholders, trailerPreset } from './trailers';
 
 export function uid(): string {
   // crypto.randomUUID needs a secure context; keep this working from file:// too.
@@ -74,22 +75,6 @@ export function defaultHitch(): HitchSpec {
   };
 }
 
-export function defaultCaravan(): CaravanSpec {
-  return {
-    name: 'Tandem caravan',
-    hasBrakes: true,
-    axles: [4800, 5800],
-    track: 1900,
-    bodyStart: 1500,
-    bodyLength: 6000,
-    bodyWidth: 2400,
-    bodyHeight: 2050,
-    floorHeight: 760,
-    tyre: { size: '235/75R15', loadIndex: 109 },
-    limits: { atm: 3000, gtm: 2800, tare: 2350, tareBall: 230, axleRating: 1600 },
-  };
-}
-
 export function defaultSettings(): CheckSettings {
   return { tolAbs: 20, tolPct: 2, nearPct: 95, ballPctMin: 8, ballPctMax: 12, frontUnloadPct: 10 };
 }
@@ -113,21 +98,7 @@ export const PRESET_PLACEHOLDERS = [
   'ute.kerbFrontPct',
   'hitch.ballOffset',
   'hitch.ballHeight',
-  'caravan.axles.0',
-  'caravan.axles.1',
-  'caravan.track',
-  'caravan.bodyStart',
-  'caravan.bodyLength',
-  'caravan.bodyWidth',
-  'caravan.bodyHeight',
-  'caravan.floorHeight',
-  'caravan.tyre.size',
-  'caravan.tyre.loadIndex',
-  'caravan.limits.atm',
-  'caravan.limits.gtm',
-  'caravan.limits.tare',
-  'caravan.limits.tareBall',
-  'caravan.limits.axleRating',
+  ...trailerPlaceholders(trailerPreset('caravan')),
 ];
 
 export interface ItemTemplate {
@@ -143,6 +114,8 @@ export interface ItemTemplate {
   offsetY?: number;
   snap?: 'seat';
   note?: string;
+  /** Only offered in the palette when towing one of these trailer types. */
+  kinds?: TrailerKind[];
 }
 
 const t = (
@@ -182,21 +155,42 @@ export const ITEM_TEMPLATES: ItemTemplate[] = [
   t('lrTank', 'Tub', 'Long-range fuel tank (full)', 85, [900, 700, 250], 'underTub', '#555d66', { note: 'Mounted under the tub.' }),
   t('towbar', 'Tow bar', 'Tow bar + tongue', 32, [900, 1100, 180], 'hitch', '#1d1f22'),
   t('bikeRack', 'Tow bar', 'Hitch bike rack + 2 bikes', 45, [600, 1200, 900], 'towbar', '#5b8c3a'),
-  t('gas', 'Caravan drawbar', 'Gas bottle 9 kg (full)', 19, [320, 320, 600], 'cvDrawbar', '#e8e8e8', { shape: 'cylinder' }),
-  t('drawbarBox', 'Caravan drawbar', 'Drawbar toolbox (loaded)', 45, [450, 1200, 450], 'cvDrawbar', '#6a7178'),
-  t('cvJerry', 'Caravan drawbar', 'Jerry can 20 L', 21, [350, 170, 470], 'cvDrawbar', '#c63b32'),
-  t('generator', 'Caravan drawbar', 'Generator 2 kVA', 24, [500, 300, 450], 'cvDrawbar', '#d64f2a'),
-  t('cvWater', 'Caravan inside', 'Fresh water tank 95 L (full)', 102, [900, 700, 180], 'cvUnderFloor', '#2a6fdb', { note: 'Under-floor tank.' }),
-  t('cvGrey', 'Caravan inside', 'Grey water tank 95 L (full)', 100, [900, 700, 180], 'cvUnderFloor', '#7a7f55'),
-  t('cvBattery', 'Caravan inside', 'Lithium battery 200 Ah', 25, [520, 240, 220], 'cvFloorFront', '#4b5563'),
-  t('food', 'Caravan inside', 'Food and drinks', 60, [800, 500, 500], 'cvFloorCentre', '#e0a43a'),
-  t('clothes', 'Caravan inside', 'Clothes and bedding', 40, [900, 600, 400], 'cvFloorFront', '#9b7fb8'),
-  t('kitchen', 'Caravan inside', 'Kitchen gear', 30, [600, 500, 400], 'cvFloorCentre', '#c9b28a'),
-  t('annex', 'Caravan inside', 'Annexe', 30, [2400, 300, 250], 'cvFloorCentre', '#738a6b'),
-  t('cvAircon', 'Caravan outside', 'Roof air conditioner', 38, [1000, 700, 250], 'cvRoof', '#f1f1f1'),
-  t('cvSolar', 'Caravan outside', 'Roof solar 2 × 200 W', 24, [1600, 1000, 40], 'cvRoof', '#1f3550'),
-  t('cvBikes', 'Caravan outside', 'Bikes on rear rack (2)', 40, [500, 1600, 1000], 'cvRearBumper', '#5b8c3a'),
-  t('cvSpare', 'Caravan outside', 'Spare wheel (rear)', 26, [240, 730, 730], 'cvRearBumper', '#222', { shape: 'cylinder' }),
+  ...[
+    t('gas', 'Drawbar', 'Gas bottle 9 kg (full)', 19, [320, 320, 600], 'cvDrawbar', '#e8e8e8', { shape: 'cylinder' }),
+    t('drawbarBox', 'Drawbar', 'Drawbar toolbox (loaded)', 45, [450, 1200, 450], 'cvDrawbar', '#6a7178'),
+    t('cvJerry', 'Drawbar', 'Jerry can 20 L', 21, [350, 170, 470], 'cvDrawbar', '#c63b32'),
+    t('generator', 'Drawbar', 'Generator 2 kVA', 24, [500, 300, 450], 'cvDrawbar', '#d64f2a'),
+  ].map((tpl) => ({ ...tpl, kinds: ['caravan', 'enclosed', 'open'] as TrailerKind[] })),
+  ...[
+    t('cvWater', 'Caravan inside', 'Fresh water tank 95 L (full)', 102, [900, 700, 180], 'cvUnderFloor', '#2a6fdb', { note: 'Under-floor tank.' }),
+    t('cvGrey', 'Caravan inside', 'Grey water tank 95 L (full)', 100, [900, 700, 180], 'cvUnderFloor', '#7a7f55'),
+    t('cvBattery', 'Caravan inside', 'Lithium battery 200 Ah', 25, [520, 240, 220], 'cvFloorFront', '#4b5563'),
+    t('food', 'Caravan inside', 'Food and drinks', 60, [800, 500, 500], 'cvFloorCentre', '#e0a43a'),
+    t('clothes', 'Caravan inside', 'Clothes and bedding', 40, [900, 600, 400], 'cvFloorFront', '#9b7fb8'),
+    t('kitchen', 'Caravan inside', 'Kitchen gear', 30, [600, 500, 400], 'cvFloorCentre', '#c9b28a'),
+    t('annex', 'Caravan inside', 'Annexe', 30, [2400, 300, 250], 'cvFloorCentre', '#738a6b'),
+    t('cvAircon', 'Caravan outside', 'Roof air conditioner', 38, [1000, 700, 250], 'cvRoof', '#f1f1f1'),
+    t('cvSolar', 'Caravan outside', 'Roof solar 2 × 200 W', 24, [1600, 1000, 40], 'cvRoof', '#1f3550'),
+    t('cvBikes', 'Caravan outside', 'Bikes on rear rack (2)', 40, [500, 1600, 1000], 'cvRearBumper', '#5b8c3a'),
+    t('cvSpare', 'Caravan outside', 'Spare wheel (rear)', 26, [240, 730, 730], 'cvRearBumper', '#222', { shape: 'cylinder' }),
+  ].map((tpl) => ({ ...tpl, kinds: ['caravan'] as TrailerKind[] })),
+  ...[
+    t('boatHull', 'Boat', 'Boat hull, 5.3 m aluminium', 550, [5300, 2100, 900], 'cvBoat', '#eef1f4', { shape: 'boat' }),
+    t('outboard', 'Boat', 'Outboard motor 115 hp', 180, [600, 500, 1250], 'cvTransom', '#2b2f35', { shape: 'outboard' }),
+    t('boatFuel', 'Boat', 'Fuel tank 80 L (full)', 68, [700, 450, 300], 'cvBoatInside', '#c63b32'),
+    t('fishing', 'Boat', 'Fishing and safety gear', 35, [700, 500, 350], 'cvBoatInside', '#5d7a8c'),
+    t('esky', 'Boat', 'Esky with ice', 30, [600, 400, 400], 'cvBoatInside', '#2a8adb'),
+    t('boatBattery', 'Boat', 'Cranking battery', 22, [330, 175, 240], 'cvBoatInside', '#4b5563'),
+  ].map((tpl) => ({ ...tpl, kinds: ['boat'] as TrailerKind[] })),
+  ...[
+    t('motorbike', 'Trailer load', 'Motorbike (dirt bike)', 120, [2100, 800, 1200], 'cvFloorCentre', '#d64f2a'),
+    t('quad', 'Trailer load', 'Quad bike', 300, [1900, 1150, 1150], 'cvFloorCentre', '#3d4652'),
+    t('mower', 'Trailer load', 'Ride-on mower', 220, [1700, 1100, 1100], 'cvFloorCentre', '#3f7d3a'),
+    t('firewood', 'Trailer load', 'Firewood 0.5 m³', 250, [1200, 1200, 400], 'cvFloorCentre', '#7b5a3c'),
+    t('pavers', 'Trailer load', 'Pavers, one pallet', 800, [1100, 1100, 600], 'cvFloorCentre', '#a5a29b'),
+    t('boxes', 'Trailer load', 'Moving boxes', 150, [1500, 1200, 900], 'cvFloorFront', '#c9a16b'),
+    t('trailerTools', 'Trailer load', 'Tools and equipment', 100, [1000, 800, 500], 'cvFloorRear', '#6a7178'),
+  ].map((tpl) => ({ ...tpl, kinds: ['enclosed', 'open'] as TrailerKind[] })),
 ];
 
 const STACKING: Anchor[] = ['roof', 'tub', 'tubFront', 'tubRear', 'cvDrawbar', 'cvFloorFront', 'cvFloorCentre', 'cvFloorRear', 'cvRoof'];
@@ -252,7 +246,7 @@ export function newSetup(name = 'My setup'): Setup {
     uteReadings: emptyUteReadings(),
     hitch: defaultHitch(),
     towing: true,
-    caravan: defaultCaravan(),
+    caravan: trailerPreset('caravan'),
     caravanReadings: emptyCaravanReadings(),
     items: [],
     settings: defaultSettings(),
@@ -261,4 +255,22 @@ export function newSetup(name = 'My setup'): Setup {
   const driver = ITEM_TEMPLATES.find((x) => x.id === 'driver')!;
   setup.items.push(itemFromTemplate(driver, setup));
   return setup;
+}
+
+/**
+ * Switches the towed vehicle to another trailer type: loads that type's typical
+ * values (as placeholders), clears the trailer readings, removes items that were
+ * on the old trailer and, for a boat, puts the boat and motor on.
+ */
+export function applyTrailerKind(setup: Setup, kind: TrailerKind) {
+  setup.towing = true;
+  setup.caravan = trailerPreset(kind);
+  setup.caravanReadings = emptyCaravanReadings();
+  setup.items = setup.items.filter((i) => i.host !== 'caravan' && i.measured?.host !== 'caravan');
+  setup.placeholders = [...setup.placeholders.filter((p) => !p.startsWith('caravan.')), ...trailerPlaceholders(setup.caravan)];
+  if (kind === 'boat') {
+    for (const id of ['boatHull', 'outboard', 'boatFuel']) {
+      setup.items.push(itemFromTemplate(ITEM_TEMPLATES.find((tpl) => tpl.id === id)!, setup));
+    }
+  }
 }

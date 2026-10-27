@@ -1,8 +1,9 @@
-import type { RefObject } from 'react';
+import { useEffect, useMemo, type RefObject } from 'react';
+import * as THREE from 'three';
 import { Edges, Html } from '@react-three/drei';
 import { useThree, type ThreeEvent } from '@react-three/fiber';
 import type { ItemShape, ItemSize, LoadItem } from '../model/types';
-import { toWorld } from '../model/geometry';
+import { BOAT_FLOOR, toWorld } from '../model/geometry';
 import { labelLayer, useUi } from '../state/ui';
 import { Mat } from './parts';
 
@@ -29,10 +30,109 @@ interface ShapeProps {
   onPointerOut?: (e: ThreeEvent<PointerEvent>) => void;
 }
 
+/** Top view of a hull, bow at +x, centred on the origin (metres). */
+function drawHull(p: THREE.Path, l: number, w: number) {
+  const bow = l / 2;
+  const stern = -l / 2;
+  const beam = bow - 0.38 * l;
+  p.moveTo(stern, -w * 0.46);
+  p.lineTo(beam, -w / 2);
+  p.quadraticCurveTo(bow - 0.04 * l, -w * 0.42, bow, 0);
+  p.quadraticCurveTo(bow - 0.04 * l, w * 0.42, beam, w / 2);
+  p.lineTo(stern, w * 0.46);
+  p.lineTo(stern, -w * 0.46);
+}
+
+/** Lays an outline extruded along +z flat, extruding upwards instead. */
+function standUp(g: THREE.BufferGeometry) {
+  g.rotateX(-Math.PI / 2);
+  return g;
+}
+
+/** Open boat: solid V-shaped hull up to the cockpit floor, gunwales above it, a console in the middle. */
+function BoatHull({ size, color, opacity, outline, userData, events }: Omit<ShapeProps, 'shape'> & { events: Record<string, unknown> }) {
+  const l = size.l / 1000;
+  const w = size.w / 1000;
+  const h = size.h / 1000;
+  const geo = useMemo(() => {
+    const floorH = h * BOAT_FLOOR;
+    const outer = new THREE.Shape();
+    drawHull(outer, l, w);
+    const base = standUp(new THREE.ExtrudeGeometry(outer, { depth: floorH, bevelEnabled: false, curveSegments: 16 }));
+    // Narrow the bottom towards a keel.
+    const pos = base.attributes.position as THREE.BufferAttribute;
+    for (let i = 0; i < pos.count; i++) {
+      const t = pos.getY(i) / floorH;
+      pos.setZ(i, pos.getZ(i) * (0.3 + 0.7 * t));
+    }
+    base.computeVertexNormals();
+    base.translate(0, -h / 2, 0);
+
+    const t = Math.min(0.05, w * 0.03);
+    const ring = new THREE.Shape();
+    drawHull(ring, l, w);
+    const hole = new THREE.Path();
+    drawHull(hole, l - 2.6 * t, w - 2 * t);
+    ring.holes = [hole];
+    const sides = standUp(new THREE.ExtrudeGeometry(ring, { depth: h - floorH, bevelEnabled: false, curveSegments: 16 }));
+    sides.translate(0, -h / 2 + floorH, 0);
+    const rail = standUp(new THREE.ExtrudeGeometry(ring, { depth: 0.035, bevelEnabled: false, curveSegments: 16 }));
+    rail.translate(0, h / 2 - 0.02, 0);
+    return { base, sides, rail, floorY: -h / 2 + floorH };
+  }, [l, w, h]);
+  useEffect(() => () => [geo.base, geo.sides, geo.rail].forEach((g) => g.dispose()), [geo]);
+  const consoleH = Math.min(0.75, h * 0.8);
+  return (
+    <group {...events}>
+      <mesh geometry={geo.base} castShadow receiveShadow userData={userData}>
+        <Mat color={color} opacity={opacity} roughness={0.35} metalness={0.3} />
+        {outline && <Edges color={outline} threshold={30} />}
+      </mesh>
+      <mesh geometry={geo.sides} castShadow userData={userData}>
+        <Mat color={color} opacity={opacity} roughness={0.35} metalness={0.3} />
+      </mesh>
+      <mesh geometry={geo.rail}>
+        <Mat color="#2b2f35" opacity={opacity} />
+      </mesh>
+      <mesh position={[-l * 0.02, geo.floorY + consoleH / 2, 0]} castShadow userData={userData}>
+        <boxGeometry args={[0.55, consoleH, 0.5]} />
+        <Mat color="#3a4048" opacity={opacity} />
+      </mesh>
+    </group>
+  );
+}
+
+/** Cowling above the transom, leg and gearcase below it. */
+function Outboard({ size, color, opacity, outline, userData, events }: Omit<ShapeProps, 'shape'> & { events: Record<string, unknown> }) {
+  const l = size.l / 1000;
+  const w = size.w / 1000;
+  const h = size.h / 1000;
+  const cowl = h * 0.38;
+  return (
+    <group {...events}>
+      <mesh position={[0, h / 2 - cowl / 2, 0]} castShadow userData={userData}>
+        <boxGeometry args={[l, cowl, w]} />
+        <Mat color={color} opacity={opacity} roughness={0.3} metalness={0.2} />
+        {outline && <Edges color={outline} />}
+      </mesh>
+      <mesh position={[l * 0.1, -cowl / 2, 0]} castShadow userData={userData}>
+        <boxGeometry args={[l * 0.32, h - cowl, w * 0.32]} />
+        <Mat color="#1d1f22" opacity={opacity} />
+      </mesh>
+      <mesh position={[l * 0.1, -h / 2 + 0.05, 0]} castShadow userData={userData}>
+        <boxGeometry args={[l * 0.7, 0.07, w * 0.3]} />
+        <Mat color="#1d1f22" opacity={opacity} />
+      </mesh>
+    </group>
+  );
+}
+
 export function ItemShapeMesh({ shape, size, color, opacity, outline, userData, ...events }: ShapeProps) {
   const l = size.l / 1000;
   const w = size.w / 1000;
   const h = size.h / 1000;
+  if (shape === 'boat') return <BoatHull size={size} color={color} opacity={opacity} outline={outline} userData={userData} events={events} />;
+  if (shape === 'outboard') return <Outboard size={size} color={color} opacity={opacity} outline={outline} userData={userData} events={events} />;
   if (shape === 'person') {
     return (
       <group {...events}>

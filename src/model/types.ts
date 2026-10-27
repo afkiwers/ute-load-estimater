@@ -19,7 +19,7 @@ export interface Placement {
   pos: Vec3;
 }
 
-export type ItemShape = 'box' | 'cylinder' | 'person' | 'bullbar';
+export type ItemShape = 'box' | 'cylinder' | 'person' | 'bullbar' | 'boat' | 'outboard';
 
 export interface ItemSize {
   l: number; // along x
@@ -108,7 +108,15 @@ export interface HitchSpec {
   };
 }
 
+export type TrailerKind = 'caravan' | 'boat' | 'enclosed' | 'open';
+
+/**
+ * The towed vehicle. It is called "caravan" throughout the code and in saved
+ * setups for compatibility; `kind` says whether it is a caravan, a boat on its
+ * trailer, an enclosed or an open trailer.
+ */
 export interface CaravanSpec {
+  kind: TrailerKind;
   name: string;
   hasBrakes: boolean;
   /** Tow ball (coupling) centre to the centre of each axle, front first: one entry, or two for a tandem. */

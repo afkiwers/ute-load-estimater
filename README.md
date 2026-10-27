@@ -24,7 +24,7 @@ Until you have weighed, the published kerb weight is used with an assumed front/
 
 Readings already include what was on the vehicle when you weighed it. Tick **Was on the vehicle when weighed** for those items (or use **Mark ticked items as weighed** right after weighing): they then only change the result when you move them or untick them, so nothing is counted twice.
 
-**Towing.** Caravan readings (weighbridge total, tow ball scale, optional axle group, front and rear axle, and side loads), plate (ATM, GTM, tare, tare ball, axle rating), tyres and geometry. Choose a single or tandem axle and enter each axle's distance from the tow ball centre. Items inside or on the caravan move the ball weight. Checks: towing capacity, tow ball download, tow bar ratings, GCM, ATM, GTM, each caravan axle against its rating, caravan tyres, ball weight share (8 to 12% guideline) and front axle unloading. An optional weight distribution hitch restores a chosen share of the front axle load.
+**Towing.** Pick what you tow: a caravan, a boat on its trailer, an enclosed trailer or an open (box) trailer. Each type starts with typical dimensions and plate values (marked as placeholders), its own 3D model and its own items in the palette (boat, motor and fuel for a boat; motorbikes, mowers and other cargo for trailers). Trailer readings (weighbridge total, tow ball scale, optional axle group, front and rear axle, and side loads), plate (ATM, GTM, tare, tare ball, axle rating), tyres and geometry. Choose a single or tandem axle and enter each axle's distance from the tow ball centre. Items inside or on the caravan move the ball weight. Checks: towing capacity, tow ball download, tow bar ratings, GCM, ATM, GTM, each caravan axle against its rating, caravan tyres, ball weight share (8 to 12% guideline) and front axle unloading. An optional weight distribution hitch restores a chosen share of the front axle load.
 
 **Also:** several named setups (duplicate one to compare loading plans), undo/redo, x-ray view to place items inside the cab or caravan, paint colours, and a printable report (save as PDF from the print dialog).
 
@@ -63,7 +63,7 @@ To release, publish a release on GitHub (Releases, "Draft a new release", pick o
 
 Code map:
 
-- `src/model/` load model (`calc.ts`), geometry, tyre tables, presets; no UI code
+- `src/model/` load model (`calc.ts`), geometry, tyre tables, presets, trailer types (`trailers.ts`); no UI code. The towed vehicle is called `caravan` in the code and in saved setups whatever its type; `caravan.kind` says what it is.
 - `src/state/` setups store (saved in the browser), UI state
 - `src/three/` 3D scene, vehicle models, drag and drop
 - `src/components/` panels, inspector, report

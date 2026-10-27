@@ -1,7 +1,7 @@
 // Static load model.
 //
 // Longitudinally the ute is a beam on two supports (front and rear axle) and
-// the caravan a beam on the tow ball and its axle group. Laterally each axle
+// the trailer (`caravan` in the code) a beam on the tow ball and its axle group. Laterally each axle
 // splits its share between its two wheels by lever over the track. A rigid
 // four-wheel vehicle is statically indeterminate side to side, so this per-axle
 // split ignores roll stiffness; it is the usual approximation for load planning.
@@ -19,6 +19,7 @@ import type {
 } from './types';
 import { kg, mm, num, pct, signedKg } from './format';
 import { axleCentre } from './geometry';
+import { trailerName } from './trailers';
 import { loadIndexKg, tyreDiameter } from './tyres';
 
 export type WheelId = 'fl' | 'fr' | 'rl' | 'rr';
@@ -66,7 +67,7 @@ export interface CaravanBaseline {
   issues: Issue[];
 }
 
-export type CheckGroup = 'Vehicle' | 'Tyres' | 'Towing' | 'Caravan';
+export type CheckGroup = 'Vehicle' | 'Tyres' | 'Towing' | 'Trailer';
 export type CheckStatus = 'ok' | 'near' | 'over' | 'unset' | 'warn';
 
 export interface Check {
@@ -201,15 +202,15 @@ const UTE_LABEL: Record<keyof UteReadings, string> = {
   rr: 'Rear right wheel',
 };
 
-const CARAVAN_LABEL: Record<keyof CaravanReadings, string> = {
-  total: 'Caravan total',
+const caravanLabels = (T: string): Record<keyof CaravanReadings, string> => ({
+  total: `${T} total`,
   ball: 'Ball weight',
   axle: 'Axle group',
   axleFront: 'Front axle',
   axleRear: 'Rear axle',
   left: 'Left side',
   right: 'Right side',
-};
+});
 
 function positivity<T extends object>(
   r: T,
@@ -419,10 +420,12 @@ export function deriveCaravanBaseline(
 ): CaravanBaseline {
   const issues: Issue[] = [];
   const derived: CaravanBaseline['derived'] = {};
+  const T = trailerName(cv.kind);
+  const Tc = trailerName(cv.kind, true);
   const tandem = cv.axles.length === 2;
   // Per-axle readings only mean something on a tandem; ignore leftovers after switching to a single axle.
   const readings = tandem ? r : { ...r, axleFront: null, axleRear: null };
-  positivity(readings, CARAVAN_LABEL, 'caravanReadings', issues);
+  positivity(readings, caravanLabels(Tc), 'caravanReadings', issues);
   const v = {
     total: clean(r.total),
     ball: clean(r.ball),
@@ -462,17 +465,17 @@ export function deriveCaravanBaseline(
       derived.total = total;
       issues.push({
         level: 'info',
-        message: `Caravan not weighed yet: using the plated tare (${kg(total)}) and tare ball weight (${kg(ball)}). Add your weighbridge and ball scale readings.`,
+        message: `${Tc} not weighed yet: using the plated tare (${kg(total)}) and tare ball weight (${kg(ball)}). Add your weighbridge and ball scale readings.`,
       });
     } else {
       source = 'partial';
       if (v.total != null) {
         ball = v.total * ratio;
         axle = v.total - ball;
-        issues.push({ level: 'warn', message: `Only the caravan total is known, so the ball weight assumes ${ratioText}. Measure it with a tow ball scale.`, fields: ['caravanReadings.ball'] });
+        issues.push({ level: 'warn', message: `Only the ${T} total is known, so the ball weight assumes ${ratioText}. Measure it with a tow ball scale.`, fields: ['caravanReadings.ball'] });
       } else if (ball != null) {
         axle = ball / ratio - ball;
-        issues.push({ level: 'warn', message: `Only the ball weight is known, so the axle group load assumes ${ratioText}. Add the caravan total from a weighbridge.`, fields: ['caravanReadings.total'] });
+        issues.push({ level: 'warn', message: `Only the ball weight is known, so the axle group load assumes ${ratioText}. Add the ${T} total from a weighbridge.`, fields: ['caravanReadings.total'] });
       } else {
         ball = (axle! * ratio) / (1 - ratio);
         issues.push({ level: 'warn', message: `Only the axle group is known, so the ball weight assumes ${ratioText}. Measure it with a tow ball scale.`, fields: ['caravanReadings.ball'] });
@@ -483,16 +486,16 @@ export function deriveCaravanBaseline(
   }
   if (v.total == null && derived.total === undefined) derived.total = ball + axle!;
 
-  const [left, right] = splitAxle(axle!, v.left, v.right, 'left', 'right', derived, issues, 'Caravan axle group', 'caravanReadings');
+  const [left, right] = splitAxle(axle!, v.left, v.right, 'left', 'right', derived, issues, `${Tc} axle group`, 'caravanReadings');
   const axles = tandem
-    ? splitAxle(axle!, v.axleFront, v.axleRear, 'axleFront', 'axleRear', derived, issues, 'Caravan axles', 'caravanReadings')
+    ? splitAxle(axle!, v.axleFront, v.axleRear, 'axleFront', 'axleRear', derived, issues, `${Tc} axles`, 'caravanReadings')
     : [axle!];
 
   if (perAxle != null && v.axle != null) {
-    mismatch(issues, s, 'Caravan front + rear axle vs axle group', perAxle, v.axle, ['caravanReadings.axleFront', 'caravanReadings.axleRear', 'caravanReadings.axle']);
+    mismatch(issues, s, `${Tc} front + rear axle vs axle group`, perAxle, v.axle, ['caravanReadings.axleFront', 'caravanReadings.axleRear', 'caravanReadings.axle']);
   }
   if (perAxle != null && sides != null) {
-    mismatch(issues, s, 'Caravan front + rear axle vs left + right side', perAxle, sides, ['caravanReadings.axleFront', 'caravanReadings.axleRear', 'caravanReadings.left', 'caravanReadings.right']);
+    mismatch(issues, s, `${Tc} front + rear axle vs left + right side`, perAxle, sides, ['caravanReadings.axleFront', 'caravanReadings.axleRear', 'caravanReadings.left', 'caravanReadings.right']);
   }
   if (v.axleFront != null && v.axleRear != null) {
     const mean = (v.axleFront + v.axleRear) / 2;
@@ -500,19 +503,19 @@ export function deriveCaravanBaseline(
     if (diffPct > 15) {
       issues.push({
         level: 'warn',
-        message: `The caravan's front and rear axle differ by ${pct(diffPct)} (${kg(v.axleFront)} vs ${kg(v.axleRear)}). Tandem axles usually carry similar loads: check the readings, that the caravan was level, and the suspension.`,
+        message: `The ${T}'s front and rear axle differ by ${pct(diffPct)} (${kg(v.axleFront)} vs ${kg(v.axleRear)}). Tandem axles usually carry similar loads: check the readings, that the ${T} was level, and the suspension.`,
         fields: ['caravanReadings.axleFront', 'caravanReadings.axleRear'],
       });
     }
   }
 
   if (sides != null && v.axle != null) {
-    mismatch(issues, s, 'Caravan left + right vs axle group', sides, v.axle, ['caravanReadings.left', 'caravanReadings.right', 'caravanReadings.axle']);
+    mismatch(issues, s, `${Tc} left + right vs axle group`, sides, v.axle, ['caravanReadings.left', 'caravanReadings.right', 'caravanReadings.axle']);
   }
   if (v.ball != null && axleMeasured != null && v.total != null) {
-    mismatch(issues, s, 'Ball weight + axle group vs caravan total', v.ball + axleMeasured, v.total, ['caravanReadings.ball', 'caravanReadings.axle', 'caravanReadings.total']);
+    mismatch(issues, s, `Ball weight + axle group vs ${T} total`, v.ball + axleMeasured, v.total, ['caravanReadings.ball', 'caravanReadings.axle', 'caravanReadings.total']);
   }
-  if (v.left != null && v.right != null) sideBalance(issues, 'Caravan axle group', v.left, v.right, ['caravanReadings.left', 'caravanReadings.right']);
+  if (v.left != null && v.right != null) sideBalance(issues, `${Tc} axle group`, v.left, v.right, ['caravanReadings.left', 'caravanReadings.right']);
 
   const total = ball + axle!;
   if (source === 'measured' && total > 0) {
@@ -520,7 +523,7 @@ export function deriveCaravanBaseline(
     if (bp < 4 || bp > 20) {
       issues.push({
         level: 'warn',
-        message: `The measured ball weight is ${pct(bp)} of the caravan mass, well outside the usual 8–12%. Check the readings.`,
+        message: `The measured ball weight is ${pct(bp)} of the ${T} mass, well outside the usual 8–12%. Check the readings.`,
         fields: ['caravanReadings.ball'],
       });
     }
@@ -563,6 +566,8 @@ function minOf(...values: (number | null | undefined)[]): number | null {
 
 export function compute(setup: Setup): Result {
   const { ute, hitch, caravan: cv, settings: s } = setup;
+  const T = trailerName(cv.kind);
+  const Tc = trailerName(cv.kind, true);
   const towing = setup.towing;
   const issues: Issue[] = [];
 
@@ -602,7 +607,7 @@ export function compute(setup: Setup): Result {
   if (ignored) {
     issues.push({
       level: 'info',
-      message: `${ignored} caravan item${ignored === 1 ? ' is' : 's are'} ignored because towing is switched off.`,
+      message: `${ignored} ${T} item${ignored === 1 ? ' is' : 's are'} ignored because towing is switched off.`,
     });
   }
 
@@ -628,7 +633,7 @@ export function compute(setup: Setup): Result {
       if (tyre && spacing < tyre + 20) {
         issues.push({
           level: 'warn',
-          message: `The caravan axles are ${mm(spacing)} apart, less than a tyre diameter (${mm(tyre)}): the wheels would touch. Check the axle distances from the tow ball.`,
+          message: `The ${T} axles are ${mm(spacing)} apart, less than a tyre diameter (${mm(tyre)}): the wheels would touch. Check the axle distances from the tow ball.`,
           fields: ['caravan.axles.0', 'caravan.axles.1'],
         });
       }
@@ -637,7 +642,7 @@ export function compute(setup: Setup): Result {
     if (B < 0) {
       issues.push({
         level: 'error',
-        message: `The ball weight is negative (${kg(B)}): the caravan is tail-heavy and lifts the tow ball. This is dangerous; move weight forward.`,
+        message: `The ball weight is negative (${kg(B)}): the ${T} is tail-heavy and lifts the tow ball. This is dangerous; move weight forward.`,
       });
     }
 
@@ -711,18 +716,18 @@ export function compute(setup: Setup): Result {
     const B = hitchResult.ball;
     const towCap = cv.hasBrakes ? lim.brakedTow : lim.unbrakedTow;
     checks.push(
-      limitCheck(s, 'towCapacity', 'Towing', cv.hasBrakes ? 'Caravan mass vs braked towing capacity' : 'Caravan mass vs unbraked towing capacity', c.mass, towCap),
+      limitCheck(s, 'towCapacity', 'Towing', `${Tc} mass vs ${cv.hasBrakes ? 'braked' : 'unbraked'} towing capacity`, c.mass, towCap),
       limitCheck(s, 'towBall', 'Towing', 'Tow ball download', B, lim.towBallMax,
         hitch.wdh.enabled ? `Static ball weight. With the WDH tensioned the ute carries ${kg(hitchResult.netHitch)} at the hitch.` : undefined),
     );
-    if (hitch.towbarRating) checks.push(limitCheck(s, 'towbarRating', 'Towing', 'Caravan mass vs tow bar rating', c.mass, hitch.towbarRating));
+    if (hitch.towbarRating) checks.push(limitCheck(s, 'towbarRating', 'Towing', `${Tc} mass vs tow bar rating`, c.mass, hitch.towbarRating));
     if (hitch.towbarBallRating) checks.push(limitCheck(s, 'towbarBall', 'Towing', 'Ball download vs tow bar rating', B, hitch.towbarBallRating));
     checks.push(limitCheck(s, 'gcm', 'Towing', 'Gross combination mass (GCM)', unhitchedGross + c.mass, lim.gcm,
-      `Ute ${kg(unhitchedGross)} + caravan ${kg(c.mass)}.`));
+      `Ute ${kg(unhitchedGross)} + ${T} ${kg(c.mass)}.`));
     checks.push({
       id: 'ballPct',
       group: 'Towing',
-      label: 'Ball weight share of caravan mass',
+      label: `Ball weight share of ${T} mass`,
       value: c.ballPct,
       limit: s.ballPctMax,
       min: s.ballPctMin,
@@ -747,14 +752,14 @@ export function compute(setup: Setup): Result {
       detail: `Front axle ${kg(hitchResult.frontUnhitched)} → ${kg(hitchResult.frontHitched)}${hitch.wdh.enabled ? ` with the WDH restoring ${pct(hitch.wdh.restorePct)}` : ''}. Less weight on the steering axle reduces grip for steering and braking.`,
     });
     checks.push(
-      limitCheck(s, 'atm', 'Caravan', 'Caravan mass vs ATM', c.mass, cv.limits.atm),
-      limitCheck(s, 'gtm', 'Caravan', 'Axle group vs GTM', c.axle, cv.limits.gtm,
+      limitCheck(s, 'atm', 'Trailer', `${Tc} mass vs ATM`, c.mass, cv.limits.atm),
+      limitCheck(s, 'gtm', 'Trailer', 'Axle group vs GTM', c.axle, cv.limits.gtm,
         hitchResult.wdhToCaravan > 0 ? `Includes ${kg(hitchResult.wdhToCaravan)} moved by the WDH.` : undefined),
     );
     const n = c.axleLoads.length;
     c.axleLoads.forEach((load, i) => {
       checks.push(
-        limitCheck(s, `cvAxle_${i}`, 'Caravan', n > 1 ? `Caravan ${i === 0 ? 'front' : 'rear'} axle` : 'Caravan axle', load, cv.limits.axleRating,
+        limitCheck(s, `cvAxle_${i}`, 'Trailer', n > 1 ? `${Tc} ${i === 0 ? 'front' : 'rear'} axle` : `${Tc} axle`, load, cv.limits.axleRating,
           cv.limits.axleRating ? undefined : 'Enter the axle rating from the axle or compliance plate.'),
       );
     });
@@ -763,20 +768,20 @@ export function compute(setup: Setup): Result {
     const heaviest = Math.max(...c.axleLoads);
     const sideTyre = (side: number) => (c.axle > 0 ? (heaviest * side) / c.axle : side / n);
     checks.push(
-      limitCheck(s, 'cvTyre_left', 'Caravan', `Caravan left tyre${n > 1 ? ' (heaviest)' : ''}`, sideTyre(c.axleLeft), cvTyreKg),
-      limitCheck(s, 'cvTyre_right', 'Caravan', `Caravan right tyre${n > 1 ? ' (heaviest)' : ''}`, sideTyre(c.axleRight), cvTyreKg),
+      limitCheck(s, 'cvTyre_left', 'Trailer', `${Tc} left tyre${n > 1 ? ' (heaviest)' : ''}`, sideTyre(c.axleLeft), cvTyreKg),
+      limitCheck(s, 'cvTyre_right', 'Trailer', `${Tc} right tyre${n > 1 ? ' (heaviest)' : ''}`, sideTyre(c.axleRight), cvTyreKg),
     );
     if (cv.limits.atm && towCap && cv.limits.atm > towCap) {
       checks.push({
         id: 'atmVsTow',
-        group: 'Caravan',
+        group: 'Trailer',
         label: 'Plated ATM vs towing capacity',
         value: cv.limits.atm,
         limit: towCap,
         unit: 'kg',
         advisory: true,
         status: 'warn',
-        detail: 'The caravan is rated to be loaded heavier than the ute may tow. The actual mass is what counts, but you can overload it without noticing.',
+        detail: `The ${T} is rated to be loaded heavier than the ute may tow. The actual mass is what counts, but you can overload it without noticing.`,
       });
     }
   }

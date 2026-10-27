@@ -7,7 +7,7 @@ import { activeSetup } from '../state/store';
 import { useResult, useSetup } from '../state/result';
 import { useUi, type ViewPreset } from '../state/ui';
 import { UteModel } from './UteModel';
-import { CaravanModel } from './CaravanModel';
+import { TrailerModel } from './TrailerModel';
 import { DropGhost, Items } from './Items';
 import { Labels } from './Labels';
 import { Interaction } from './Interaction';
@@ -164,7 +164,7 @@ export function Scene() {
       />
 
       <UteModel ute={setup.ute} hitch={setup.hitch} xray={xray} />
-      {setup.towing && <CaravanModel caravan={setup.caravan} hitch={setup.hitch} offset={offset} xray={xray} />}
+      {setup.towing && <TrailerModel caravan={setup.caravan} hitch={setup.hitch} offset={offset} xray={xray} />}
       <Items items={items} offset={offset} />
       <DropGhost offset={offset} />
       {labels && <Labels setup={setup} result={result} offset={offset} />}

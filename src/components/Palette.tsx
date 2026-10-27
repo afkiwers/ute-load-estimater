@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ITEM_TEMPLATES, itemFromTemplate, uid, type ItemTemplate } from '../model/presets';
+import { trailerName } from '../model/trailers';
 import { activeSetup, useStore } from '../state/store';
 import { useUi } from '../state/ui';
 
@@ -11,7 +12,7 @@ export function addTemplate(tpl: ItemTemplate) {
   const item = itemFromTemplate(tpl, setup);
   useStore.getState().update((s) => void s.items.push(item));
   useUi.getState().select(item.id);
-  if (item.host === 'caravan' && !setup.towing) useUi.getState().showToast('Added to the caravan, but towing is switched off (Towing tab).');
+  if (item.host === 'caravan' && !setup.towing) useUi.getState().showToast(`Added to the ${trailerName(setup.caravan.kind)}, but towing is switched off (Towing tab).`);
 }
 
 function TemplateChip({ tpl, onRemove }: { tpl: ItemTemplate; onRemove?: () => void }) {
@@ -109,11 +110,15 @@ export function Palette() {
   const custom = useStore((s) => s.customTemplates);
   const remove = useStore((s) => s.removeCustomTemplate);
   const [showForm, setShowForm] = useState(false);
-  const categories = [...new Set(ITEM_TEMPLATES.map((t) => t.category))];
+  const towing = useStore((s) => s.setups[s.activeId].towing);
+  const kind = useStore((s) => s.setups[s.activeId].caravan.kind);
+  // Trailer items only for the trailer being towed; ute items always.
+  const templates = ITEM_TEMPLATES.filter((t) => !t.kinds || (towing && t.kinds.includes(kind)));
+  const categories = [...new Set(templates.map((t) => t.category))];
   return (
     <aside className="palette">
       <div className="panel-title">Items</div>
-      <p className="palette-hint">Drag onto the ute or caravan in the 3D view. Change the mass and position afterwards.</p>
+      <p className="palette-hint">Drag onto the ute or trailer in the 3D view. Change the mass and position afterwards.</p>
 
       <div className="panel-title" style={{ display: 'flex', alignItems: 'center' }}>
         My items
@@ -134,7 +139,7 @@ export function Palette() {
       {categories.map((cat) => (
         <div key={cat}>
           <div className="panel-title">{cat}</div>
-          {ITEM_TEMPLATES.filter((t) => t.category === cat).map((t) => (
+          {templates.filter((t) => t.category === cat).map((t) => (
             <TemplateChip key={t.id} tpl={t} />
           ))}
         </div>

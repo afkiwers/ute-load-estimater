@@ -557,6 +557,39 @@ button {
   background: var(--panel);
 }
 
+.kinds {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.kind {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 6px 4px 7px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.kind:hover {
+  background: var(--panel-2);
+  color: var(--text);
+}
+
+.kind.on {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+
 /* ---------- Weighbridge diagram ---------- */
 
 .wb {

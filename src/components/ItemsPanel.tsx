@@ -1,6 +1,7 @@
 import type { LoadItem } from '../model/types';
 import type { ItemEffect } from '../model/calc';
 import { num, signedKg } from '../model/format';
+import { trailerName } from '../model/trailers';
 import { useStore } from '../state/store';
 import { useResult, useSetup } from '../state/result';
 import { useUi } from '../state/ui';
@@ -15,7 +16,7 @@ export function effectText(item: LoadItem, e: ItemEffect | undefined): string {
     parts.push(`front ${short(e.ute.fl + e.ute.fr)}, rear ${short(e.ute.rl + e.ute.rr)}`);
   }
   if (Math.abs(van) > 0.5 || item.host === 'caravan') {
-    parts.push(`ball ${short(e.caravan.ball)}, van axles ${short(e.caravan.left + e.caravan.right)}`);
+    parts.push(`ball ${short(e.caravan.ball)}, trailer axles ${short(e.caravan.left + e.caravan.right)}`);
   }
   return parts.join(' · ');
 }
@@ -59,7 +60,10 @@ export function ItemsPanel() {
   const update = useStore((s) => s.update);
   const groups: { title: string; items: LoadItem[] }[] = [
     { title: 'On the ute', items: setup.items.filter((i) => i.host === 'ute') },
-    { title: setup.towing ? 'In / on the caravan' : 'Caravan (towing is off)', items: setup.items.filter((i) => i.host === 'caravan') },
+    {
+      title: setup.towing ? `In / on the ${trailerName(setup.caravan.kind)}` : `${trailerName(setup.caravan.kind, true)} (towing is off)`,
+      items: setup.items.filter((i) => i.host === 'caravan'),
+    },
   ];
   const added = setup.items.filter((i) => i.enabled && !i.measured).reduce((a, i) => a + i.mass, 0);
   const removed = setup.items.filter((i) => !i.enabled && i.measured).reduce((a, i) => a + i.mass, 0);

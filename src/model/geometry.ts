@@ -217,7 +217,10 @@ export type Anchor =
   | 'cvFloorRear'
   | 'cvUnderFloor'
   | 'cvRearBumper'
-  | 'cvRoof';
+  | 'cvRoof'
+  | 'cvBoat'
+  | 'cvTransom'
+  | 'cvBoatInside';
 
 export const ANCHOR_HOST: Record<Anchor, Host> = {
   bullbar: 'ute',
@@ -237,7 +240,17 @@ export const ANCHOR_HOST: Record<Anchor, Host> = {
   cvUnderFloor: 'caravan',
   cvRearBumper: 'caravan',
   cvRoof: 'caravan',
+  cvBoat: 'caravan',
+  cvTransom: 'caravan',
+  cvBoatInside: 'caravan',
 };
+
+/** Share of a boat hull's height that is solid below the cockpit floor (also used by the 3D hull). */
+export const BOAT_FLOOR = 0.35;
+
+function boatHull(setup: Setup) {
+  return setup.items.find((i) => i.host === 'caravan' && i.shape === 'boat' && i.enabled);
+}
 
 /** Default placement for a new item, used when it is added by click instead of drag. */
 export function anchorPlacement(anchor: Anchor, size: ItemSize, setup: Setup, occupied: Vec3[] = []): Placement {
@@ -274,7 +287,8 @@ export function anchorPlacement(anchor: Anchor, size: ItemSize, setup: Setup, oc
     case 'cvFloorFront':
       return van({ x: c.bodyStart + size.l / 2 + 100, y: 0, z: c.floorZ + size.h / 2 });
     case 'cvFloorCentre':
-      return van({ x: c.a, y: 0, z: c.floorZ + size.h / 2 });
+      // Caravans: over the axles, as packing guides advise. Cargo trailers: the middle of the tray, ahead of the axle.
+      return van({ x: setup.caravan.kind === 'caravan' ? c.a : (c.bodyStart + c.bodyEnd) / 2, y: 0, z: c.floorZ + size.h / 2 });
     case 'cvFloorRear':
       return van({ x: c.bodyEnd - size.l / 2 - 100, y: 0, z: c.floorZ + size.h / 2 });
     case 'cvUnderFloor':
@@ -283,6 +297,20 @@ export function anchorPlacement(anchor: Anchor, size: ItemSize, setup: Setup, oc
       return van({ x: c.bodyEnd + size.l / 2 + 80, y: 0, z: c.floorZ + size.h / 2 - 150 });
     case 'cvRoof':
       return van({ x: (c.bodyStart + c.bodyEnd) / 2, y: 0, z: c.roofZ + size.h / 2 });
+    case 'cvBoat':
+      // Bow just behind the winch post, sitting on the bunks.
+      return van({ x: c.bodyStart + 200 + size.l / 2, y: 0, z: c.floorZ + size.h / 2 });
+    case 'cvTransom': {
+      const hull = boatHull(setup);
+      if (!hull) return van({ x: c.bodyEnd - size.l / 2, y: 0, z: c.floorZ + size.h / 2 });
+      return van({ x: hull.pos.x + hull.size.l / 2 + size.l / 2 - 120, y: 0, z: hull.pos.z + hull.size.h / 2 });
+    }
+    case 'cvBoatInside': {
+      const hull = boatHull(setup);
+      if (!hull) return van({ x: c.a, y: 0, z: c.floorZ + size.h / 2 });
+      const floor = hull.pos.z - hull.size.h / 2 + hull.size.h * BOAT_FLOOR;
+      return van({ x: hull.pos.x + hull.size.l * 0.22, y: 0, z: floor + size.h / 2 });
+    }
   }
 }
 

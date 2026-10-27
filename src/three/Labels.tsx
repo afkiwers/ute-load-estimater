@@ -5,6 +5,7 @@ import { caravanGeometry, toWorld, uteGeometry } from '../model/geometry';
 import { mm, num } from '../model/format';
 import type { Host, Setup, Vec3 } from '../model/types';
 import { Block } from './parts';
+import { trailerName } from '../model/trailers';
 import { labelLayer } from '../state/ui';
 
 function Tag({ host, p, offset, status, children }: { host: Host; p: Vec3; offset: number; status: string; children: ReactNode }) {
@@ -102,7 +103,7 @@ function CaravanLabels({ setup, result, offset }: { setup: Setup; result: Result
         </>
       )}
       <Tag host="caravan" offset={offset} p={{ x: (c.bodyStart + c.bodyEnd) / 2, y: 0, z: c.roofZ + 450 }} status={statusOf(checks, 'atm')}>
-        Caravan <b>{num(cr.mass)}</b>
+        {trailerName(cv.kind, true)} <b>{num(cr.mass)}</b>
         {cv.limits.atm ? ` / ATM ${num(cv.limits.atm)}` : ''} kg
       </Tag>
       {c.axles.map((x, i) => (
