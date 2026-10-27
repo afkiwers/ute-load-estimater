@@ -45,12 +45,16 @@ export interface UteGeometry {
   ball: Vec3;
 }
 
+/** Rear axle centre to the back of the body. */
+export function rearOverhang(ute: Pick<UteSpec, 'overallLength' | 'wheelbase' | 'frontOverhang'>): number {
+  return Math.max(400, ute.overallLength - ute.wheelbase - ute.frontOverhang);
+}
+
 export function uteGeometry(ute: UteSpec, hitch: HitchSpec): UteGeometry {
   const suv = ute.bodyStyle === 'suv';
   const L = ute.wheelbase;
   const sFront = -ute.frontOverhang;
-  const rearOverhang = Math.max(400, ute.overallLength - L - ute.frontOverhang);
-  const sRear = L + rearOverhang;
+  const sRear = L + rearOverhang(ute);
   const wheelR = (tyreDiameter(ute.tyre.size) ?? 780) / 2;
   const tyreW = tyreWidth(ute.tyre.size) ?? 265;
   const bodyW = ute.overallWidth - 20;

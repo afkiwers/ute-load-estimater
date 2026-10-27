@@ -12,7 +12,7 @@ import type {
   UteSpec,
   Vec3,
 } from './types';
-import { anchorPlacement, type Anchor } from './geometry';
+import { anchorPlacement, rearOverhang, type Anchor } from './geometry';
 import { trailerPlaceholders, trailerPreset } from './trailers';
 import { DEFAULT_VEHICLE, vehicleModel } from './vehicles';
 
@@ -28,11 +28,18 @@ export function vehicleSpec(id = DEFAULT_VEHICLE): UteSpec {
 
 /**
  * Switches the ute to another model: its published figures, with the typical ones
- * marked as placeholders. Paint, readings and items stay as they are.
+ * marked as placeholders. Paint, readings and items stay as they are, and so does a
+ * tow ball position that has been measured.
  */
 export function applyVehicle(setup: Setup, id: string) {
   setup.ute = { ...vehicleModel(id).spec(), paint: setup.ute.paint };
   setup.placeholders = [...setup.placeholders.filter((p) => !p.startsWith('ute.')), ...vehicleModel(id).placeholders];
+  if (setup.placeholders.includes('hitch.ballOffset')) setup.hitch.ballOffset = typicalBallOffset(setup.ute);
+}
+
+/** Rear axle to tow ball centre with the ball 200 mm behind the rear bumper, a typical tow bar tongue. */
+export function typicalBallOffset(ute: UteSpec): number {
+  return Math.round((rearOverhang(ute) + 200) / 10) * 10;
 }
 
 export const PAINTS: { name: string; color: string }[] = [
@@ -46,9 +53,9 @@ export const PAINTS: { name: string; color: string }[] = [
   { name: 'Blue', color: '#23405c' },
 ];
 
-export function defaultHitch(): HitchSpec {
+export function defaultHitch(ute: UteSpec): HitchSpec {
   return {
-    ballOffset: 1300,
+    ballOffset: typicalBallOffset(ute),
     ballHeight: 480,
     towbarRating: null,
     towbarBallRating: null,
@@ -207,13 +214,14 @@ export function itemFromTemplate(tpl: ItemTemplate, setup: Setup): LoadItem {
 }
 
 export function newSetup(name = 'My setup'): Setup {
+  const ute = vehicleSpec();
   const setup: Setup = {
     id: uid(),
     name,
     updatedAt: Date.now(),
-    ute: vehicleSpec(),
+    ute,
     uteReadings: emptyUteReadings(),
-    hitch: defaultHitch(),
+    hitch: defaultHitch(ute),
     towing: true,
     caravan: trailerPreset('caravan'),
     caravanReadings: emptyCaravanReadings(),

@@ -63,11 +63,16 @@ describe('vehicle models', () => {
     expect(s.ute.tyre).toMatchObject({ size: '265/60R18' });
     // 76 L tank: 66 L of diesel above the tare's 10 L is 55 kg.
     expect(s.ute.limits).toEqual({ gvm: 3100, gcm: 6000, frontAxle: 1450, rearAxle: 1910, kerb: 2105, tare: 2050, payload: 995, brakedTow: 3500, unbrakedTow: 750, towBallMax: 350 });
-    // Isuzu publishes the track, front overhang and tub size, not the tare, kerb split or load index.
+    // Isuzu publishes the track, front overhang and tub size, not the kerb split; listings confirm the D-MAX tare.
     expect(s.placeholders).not.toEqual(expect.arrayContaining(['ute.trackFront']));
     expect(s.placeholders).not.toContain('ute.frontOverhang');
     expect(s.placeholders).not.toContain('ute.tub.length');
-    expect(s.placeholders).toEqual(expect.arrayContaining(['ute.limits.tare', 'ute.kerbFrontPct', 'ute.tyre.loadIndex', 'ute.tub.floorHeight']));
+    expect(s.placeholders).not.toContain('ute.limits.tare');
+    expect(s.placeholders).toEqual(expect.arrayContaining(['ute.kerbFrontPct', 'ute.tyre.loadIndex', 'ute.tub.floorHeight']));
+    // The 17-inch tyre's load index is Michelin's fitment for the SX.
+    applyVehicle(s, 'dmax-sx-30d');
+    expect(s.ute.tyre).toMatchObject({ size: '255/65R17', loadIndex: 110 });
+    expect(s.placeholders).not.toContain('ute.tyre.loadIndex');
   });
 
   it('draws the Isuzu MU-X as an SUV', () => {
@@ -76,9 +81,24 @@ describe('vehicle models', () => {
     expect(s.ute).toMatchObject({ name: 'Isuzu MU-X LS-T 3.0L diesel 4x4', bodyStyle: 'suv', wheelbase: 2855, overallLength: 4860, sunroof: false });
     expect(s.ute.tyre).toMatchObject({ size: '265/50R20' });
     expect(s.ute.limits).toMatchObject({ gvm: 2800, gcm: 5900, frontAxle: 1450, rearAxle: 1650, kerb: 2185, tare: 2127, payload: 615 });
-    expect(s.placeholders).toEqual(expect.arrayContaining(['ute.tub.length', 'ute.tub.width']));
+    expect(s.placeholders).toEqual(expect.arrayContaining(['ute.tub.length', 'ute.tub.width', 'ute.limits.tare', 'ute.tyre.loadIndex']));
     applyVehicle(s, 'mux-lsm-22d-4x2');
     expect(s.ute.limits).toMatchObject({ gvm: 2700, kerb: 1995, payload: 705 });
     expect(s.placeholders).toContain('ute.limits.frontAxle');
+  });
+
+  it('puts the tow ball 200 mm behind the rear bumper until it has been measured', () => {
+    const s = newSetup();
+    // Cannon Alpha: 5,445 long, 3,350 wheelbase, 950 front overhang, so 1,145 behind the rear axle.
+    expect(s.hitch.ballOffset).toBe(1350);
+    applyVehicle(s, 'dmax-lsu-30d');
+    expect(s.hitch.ballOffset).toBe(1460);
+    applyVehicle(s, 'mux-lsu-30d');
+    expect(s.hitch.ballOffset).toBe(1300);
+    // Measured, so switching model leaves it alone.
+    s.hitch.ballOffset = 1240;
+    s.placeholders = s.placeholders.filter((p) => p !== 'hitch.ballOffset');
+    applyVehicle(s, 'dmax-lsu-30d');
+    expect(s.hitch.ballOffset).toBe(1240);
   });
 });

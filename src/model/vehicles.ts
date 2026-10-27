@@ -26,10 +26,10 @@ export interface VehicleModel {
 
 export const DEFAULT_VEHICLE = 'alpha-vanta-30d';
 
-/** Not in any of the maker's brochures. Isuzu gives the track and front overhang, but only the kerb weight with a full tank. */
+/** Not in any of the maker's brochures. Isuzu gives the track and front overhang, but not how the kerb weight splits. */
 const UNPUBLISHED = {
   GWM: ['ute.trackFront', 'ute.trackRear', 'ute.frontOverhang', 'ute.tub.floorHeight'],
-  Isuzu: ['ute.tub.floorHeight', 'ute.kerbFrontPct', 'ute.limits.tare', 'ute.tyre.loadIndex'],
+  Isuzu: ['ute.tub.floorHeight', 'ute.kerbFrontPct'],
 };
 const TUB = ['ute.tub.length', 'ute.tub.width', 'ute.tub.depth'];
 const OVERALL = ['ute.overallLength', 'ute.overallWidth', 'ute.overallHeight'];
@@ -341,7 +341,10 @@ const DEFS: Def[] = [
 
 // Isuzu D-MAX crew cab utes and MU-X SUVs (25.5MY brochures). The cab chassis D-MAX are left
 // out: their published kerb weight is without the tray. Isuzu gives the kerb weight with a
-// full tank, so the tare (10 L of fuel) is taken as that less the rest of the diesel.
+// full tank, so the tare (10 L of fuel) is taken as that less the rest of the diesel. For the
+// D-MAX this matches the tare in Australian listings (carsales, trucksales: SX 4x4 crew cab
+// ute 1,980 kg, crew cab chassis 1,855 to 1,860 kg); for the MU-X the only current listing
+// is 2 kg off, so its tare stays a placeholder.
 
 /** Isuzu's limits: payload is GVM less kerb weight; every model tows 3,500 kg braked with a 350 kg tow ball download. */
 function isuzuLimits(gvm: number, gcm: number, kerb: number, tankL: number, frontAxle: number, rearAxle: number): UteLimits {
@@ -376,9 +379,14 @@ const MUX: Body = {
   kerbFrontPct: 52,
 };
 
+// Tyre load indexes are not in the brochures. 255/65R17 110 is Michelin's fitment for the D-MAX SX.
+// 265/60R18 110 (one listing says 112, so 110 errs low), 265/50R20 107 and the BLADE's Goodyear
+// Wrangler DuraTrac RT 275/65R17 121 are what those tyres are made with, so they stay placeholders.
 const R17 = { size: '255/65R17', loadIndex: 110 };
 const R18 = { size: '265/60R18', loadIndex: 110 };
 const R20 = { size: '265/50R20', loadIndex: 107 };
+const R17_BLADE = { size: '275/65R17', loadIndex: 121 };
+const loadIndexTypical = (tyre: Def['tyre']) => (tyre === R17 ? [] : ['ute.tyre.loadIndex']);
 
 type Drive = '4x2' | '4x4';
 
@@ -390,7 +398,7 @@ const dmax = (id: string, name: string, drive: Drive, kerb: number, body: Partia
   body: { ...DMAX, ...body },
   limits: drive === '4x4' ? isuzuLimits(3100, 6000, kerb, 76, 1450, 1910) : isuzuLimits(3000, 5850, kerb, 76, 1450, 1910),
   tyre,
-  typical: drive === '4x2' ? ['ute.limits.frontAxle'] : [],
+  typical: [...loadIndexTypical(tyre), ...(drive === '4x2' ? ['ute.limits.frontAxle'] : [])],
 });
 
 const mux = (id: string, name: string, drive: Drive, kerb: number, body: Partial<Body>, tyre: Def['tyre']): Def => ({
@@ -400,7 +408,7 @@ const mux = (id: string, name: string, drive: Drive, kerb: number, body: Partial
   body: { ...MUX, ...body },
   limits: isuzuLimits(drive === '4x4' ? 2800 : 2700, 5900, kerb, 80, 1450, 1650),
   tyre,
-  typical: [...TUB, ...(drive === '4x2' ? ['ute.limits.frontAxle'] : [])],
+  typical: [...TUB, 'ute.limits.tare', ...loadIndexTypical(tyre), ...(drive === '4x2' ? ['ute.limits.frontAxle'] : [])],
 });
 
 const LS_U: Partial<Body> = { overallLength: 5285, overallHeight: 1790 };
@@ -424,7 +432,7 @@ const ISUZU: Def[] = [
     '4x4',
     2204,
     { overallLength: 5308, overallWidth: 1910, overallHeight: 1810, frontOverhang: 928, trackFront: 1602, trackRear: 1602 },
-    { size: '275/65R17', loadIndex: 115 },
+    R17_BLADE,
   ),
   mux('mux-lsm-22d-4x2', 'LS-M 2.2L diesel', '4x2', 1995, LS_M, R17),
   mux('mux-lsm-22d', 'LS-M 2.2L diesel', '4x4', 2085, LS_M, R17),
