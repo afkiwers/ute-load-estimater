@@ -14,44 +14,25 @@ import type {
 } from './types';
 import { anchorPlacement, type Anchor } from './geometry';
 import { trailerPlaceholders, trailerPreset } from './trailers';
+import { DEFAULT_VEHICLE, vehicleModel } from './vehicles';
 
 export function uid(): string {
   // crypto.randomUUID needs a secure context; keep this working from file:// too.
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 9);
 }
 
+/** The ute from the model list, in the default paint. */
+export function vehicleSpec(id = DEFAULT_VEHICLE): UteSpec {
+  return { ...vehicleModel(id).spec(), paint: '#e8eaec' };
+}
+
 /**
- * GWM Cannon Alpha Vanta 3.0L diesel. GVM, GCM, kerb, payload, towing, tow ball
- * download, wheelbase and overall dimensions are published figures; the rest
- * are typical values listed in PRESET_PLACEHOLDERS until replaced.
+ * Switches the ute to another model: its published figures, with the typical ones
+ * marked as placeholders. Paint, readings and items stay as they are.
  */
-export function cannonAlphaVantaDiesel(): UteSpec {
-  return {
-    name: 'GWM Cannon Alpha Vanta 3.0L diesel',
-    wheelbase: 3350,
-    trackFront: 1635,
-    trackRear: 1635,
-    overallLength: 5445,
-    overallWidth: 1991,
-    overallHeight: 1924,
-    frontOverhang: 950,
-    tub: { length: 1485, width: 1520, depth: 540, floorHeight: 880 },
-    tyre: { size: '265/55R19', loadIndex: 109, loadKg: null },
-    limits: {
-      gvm: 3495,
-      gcm: 6555,
-      frontAxle: 1600,
-      rearAxle: 2100,
-      kerb: 2550,
-      tare: 2432,
-      payload: 945,
-      brakedTow: 3500,
-      unbrakedTow: 750,
-      towBallMax: 350,
-    },
-    kerbFrontPct: 56,
-    paint: '#e8eaec',
-  };
+export function applyVehicle(setup: Setup, id: string) {
+  setup.ute = { ...vehicleModel(id).spec(), paint: setup.ute.paint };
+  setup.placeholders = [...setup.placeholders.filter((p) => !p.startsWith('ute.')), ...vehicleModel(id).placeholders];
 }
 
 export const PAINTS: { name: string; color: string }[] = [
@@ -83,19 +64,7 @@ export const emptyUteReadings = (): UteReadings => ({ total: null, front: null, 
 export const emptyCaravanReadings = (): CaravanReadings => ({ total: null, ball: null, axle: null, axleFront: null, axleRear: null, left: null, right: null });
 
 export const PRESET_PLACEHOLDERS = [
-  'ute.trackFront',
-  'ute.trackRear',
-  'ute.frontOverhang',
-  'ute.tub.length',
-  'ute.tub.width',
-  'ute.tub.depth',
-  'ute.tub.floorHeight',
-  'ute.tyre.size',
-  'ute.tyre.loadIndex',
-  'ute.limits.frontAxle',
-  'ute.limits.rearAxle',
-  'ute.limits.tare',
-  'ute.kerbFrontPct',
+  ...vehicleModel(DEFAULT_VEHICLE).placeholders,
   'hitch.ballOffset',
   'hitch.ballHeight',
   ...trailerPlaceholders(trailerPreset('caravan')),
@@ -242,7 +211,7 @@ export function newSetup(name = 'My setup'): Setup {
     id: uid(),
     name,
     updatedAt: Date.now(),
-    ute: cannonAlphaVantaDiesel(),
+    ute: vehicleSpec(),
     uteReadings: emptyUteReadings(),
     hitch: defaultHitch(),
     towing: true,

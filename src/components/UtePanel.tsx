@@ -2,7 +2,8 @@ import type { UteReadings } from '../model/types';
 import type { UteBaselineSource } from '../model/calc';
 import { kg } from '../model/format';
 import { loadIndexKg } from '../model/tyres';
-import { cannonAlphaVantaDiesel, PAINTS, PRESET_PLACEHOLDERS } from '../model/presets';
+import { applyVehicle, PAINTS } from '../model/presets';
+import { VEHICLE_FAMILIES, VEHICLES, vehicleModel } from '../model/vehicles';
 import { useStore } from '../state/store';
 import { useResult, useSetup } from '../state/result';
 import { IssueList, NumField, Section, TextField, flagFor } from './fields';
@@ -47,6 +48,29 @@ export function UtePanel() {
 
   return (
     <div className="tab-body">
+      <Section title="Vehicle">
+        <label className="field">
+          <span className="field-label">Model</span>
+          <span className="field-input">
+            <select value={setup.ute.model} onChange={(e) => update((s) => applyVehicle(s, e.target.value))}>
+              {VEHICLE_FAMILIES.map((family) => (
+                <optgroup key={family} label={family}>
+                  {VEHICLES.filter((v) => v.family === family).map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.label}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </span>
+          <span className="field-hint">
+            Loads its published limits, tyres and dimensions. Readings, items and paint stay. Values marked placeholder are typical: check them
+            against your placard.
+          </span>
+        </label>
+      </Section>
+
       <Section title="Weighbridge readings" extra="ute unhitched">
         <p className="section-note">
           Enter what you have: individual wheels, axles and/or the total. Missing values are derived (shown in grey) and every
@@ -80,7 +104,7 @@ export function UtePanel() {
         </div>
       </Section>
 
-      <Section title="Manufacturer limits" extra={setup.ute.name}>
+      <Section title="Manufacturer limits">
         <div className="fields">
           <NumField path="ute.limits.gvm" label="GVM" />
           <NumField path="ute.limits.gcm" label="GCM" />
@@ -139,14 +163,12 @@ export function UtePanel() {
         <button
           className="btn"
           onClick={() => {
-            if (!confirm('Reset the vehicle dimensions, tyres and limits to the Cannon Alpha Vanta 3.0L diesel preset? Readings and items are kept.')) return;
-            update((s) => {
-              s.ute = cannonAlphaVantaDiesel();
-              s.placeholders = [...new Set([...s.placeholders.filter((p) => !p.startsWith('ute.')), ...PRESET_PLACEHOLDERS.filter((p) => p.startsWith('ute.'))])];
-            });
+            const model = vehicleModel(setup.ute.model);
+            if (!confirm(`Reset the dimensions, tyres and limits to the ${model.label} figures? Readings, items and paint are kept.`)) return;
+            update((s) => applyVehicle(s, model.id));
           }}
         >
-          Reset vehicle to preset
+          Reset to the model's figures
         </button>
       </div>
     </div>

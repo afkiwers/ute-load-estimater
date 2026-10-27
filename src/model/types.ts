@@ -74,6 +74,8 @@ export interface TyreSpec {
 }
 
 export interface UteSpec {
+  /** The model picked from the list (see vehicles.ts); its figures may have been edited since. */
+  model: string;
   name: string;
   wheelbase: number;
   trackFront: number;

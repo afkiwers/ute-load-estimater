@@ -48,11 +48,14 @@ Distances are in mm, masses in kg. On the ute, `x` is measured rearward from the
 
 This is a static estimate to plan with. Always confirm on a weighbridge before you travel.
 
-## Vehicle preset
+## Vehicle models
 
-The default vehicle is the **GWM Cannon Alpha Vanta 3.0L diesel**. Published figures: GVM 3,495 kg, GCM 6,555 kg, kerb 2,550 kg, payload 945 kg, braked towing 3,500 kg, unbraked 750 kg, max tow ball download 350 kg, wheelbase 3,350 mm, length 5,445 mm, width 1,991 mm, height 1,924 mm.
+Pick your ute under **Vehicle** at the top of the Ute tab. The default is the **GWM Cannon Alpha Vanta 3.0L diesel** (GVM 3,495 kg, GCM 6,555 kg, kerb 2,550 kg, payload 945 kg, braked towing 3,500 kg, unbraked 750 kg, max tow ball download 350 kg, wheelbase 3,350 mm). The list also has:
 
-Values not found in published sources are filled with typical figures and marked **placeholder** in the app until you change them or click the chip to mark them verified: max front axle (1,600 kg), max rear axle (2,100 kg), tare (2,432 kg), track, front overhang, tub dimensions, tyre load index, tow ball position. Check them against your vehicle's placard, owner's manual and tow bar plate. The caravan starts with example values for a 6 m tandem van.
+- **GWM Cannon Alpha:** Lux 3.0L diesel (2026–), Ultra Hi4-T PHEV (2025–), Ultra and Lux 2.4L diesel (2024–2026), Ultra Hybrid 2.0L petrol (2024–2025)
+- **GWM Cannon:** XSR, Vanta, Ultra and Lux 2.4L diesel (2025–), Vanta 2.0L diesel (2023–2024), Cannon-X and Cannon-L 2.0L diesel (2021–2024)
+
+Kerb weight, GVM, GCM, payload and towing ratings are the published figures for each variant, from Australian spec listings (CarExpert, carsales, Drive, CarsGuide, 4X4 Australia). Values that are not published, or where sources disagree, are filled with typical figures and marked **placeholder** in the app until you change them or click the chip to mark them verified: always the axle limits, track, front overhang and tub dimensions, and depending on the model the tare, tyre size and load index, tow ball download, GCM or overall dimensions. Check them against your vehicle's placard, owner's manual and tow bar plate. Switching model keeps your readings, items and paint. The caravan starts with example values for a 6 m tandem van.
 
 ## Develop
 
