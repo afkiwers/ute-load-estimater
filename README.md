@@ -6,7 +6,7 @@
 
 # Vehicle Load Estimator
 
-Plan and check the loading of a ute or SUV and the caravan it tows. Enter your weighbridge readings and the manufacturer limits, drag accessories and gear onto a 3D model, and see the axle, wheel, tow ball and combination loads update against every limit.
+Plan and check the loading of a vehicle and the caravan it tows. Enter your weighbridge readings and the manufacturer limits, drag accessories and gear onto a 3D model, and see the axle, wheel, tow ball and combination loads update against every limit.
 
 **[Open it in your browser](https://afkiwers.github.io/vehicle-load-estimater/)**, or **[download vehicle-load-estimator.html](https://github.com/afkiwers/vehicle-load-estimater/releases/latest/download/vehicle-load-estimator.html)** to use it offline ([release notes](https://github.com/afkiwers/vehicle-load-estimater/releases/latest))
 
@@ -36,7 +36,7 @@ Readings already include what was on the vehicle when you weighed it. Tick **Was
 
 **Towing.** Pick what you tow: a caravan, a boat on its trailer, an enclosed trailer or an open (box) trailer. Each type starts with typical dimensions and plate values (marked as placeholders), its own 3D model and its own items in the palette (boat, motor and fuel for a boat; motorbikes, mowers and other cargo for trailers). Trailer readings (weighbridge total, tow ball scale, optional axle group, front and rear axle, and side loads), compliance plate (entered top to bottom as printed: tare mass, coupling load at tare mass, GTM, ATM, TGALR; the load capacity is worked out), tyres (load rating in kg as on the plate, or the load index from the tyre) and geometry. Choose a single or tandem axle and enter each axle's distance from the tow ball centre. Items inside or on the caravan move the ball weight. Checks: towing capacity, the trailer's plated ATM against the towing capacity (flagged even when the trailer is loaded lighter), tow ball download, tow bar ratings, GCM, ATM, GTM, the axle group against the TGALR (each tandem axle against half of it), caravan tyres, ball weight share (8 to 12% guideline) and front axle unloading. An optional weight distribution hitch restores a chosen share of the front axle load.
 
-**Also:** a version button in the top right corner opens an About box with the version, commit and build date, links, a button that copies them for bug reports, and a check for a newer release on GitHub. Several named setups (duplicate one to compare loading plans), undo/redo, x-ray view to place items inside the cab or caravan, paint colours and a panoramic sunroof (on by default for the grades that have one), and a printable report (save as PDF from the print dialog).
+**Also:** a version button in the top right corner opens an About box with the version, commit and build date, links, a button that copies them for bug reports, and a check for a newer release on GitHub. Several named setups (duplicate one to compare loading plans), undo/redo, x-ray view to place items inside the cabin or caravan, paint colours and a panoramic sunroof (on by default for the grades that have one), and a printable report (save as PDF from the print dialog).
 
 ## How the numbers are worked out
 
@@ -57,7 +57,7 @@ Pick your vehicle under **Make and model** at the top of the Vehicle tab. The de
 - **GWM Cannon Alpha:** Vanta and Lux 3.0L diesel, Ultra and Lux PHEV
 - **GWM Cannon:** XSR, Vanta, Ultra and Lux 2.4L diesel, Lux 2.4L diesel dual cab chassis, Ultra and Lux PHEV, Premium 2.0L diesel
 - **Earlier GWM models:** Cannon Alpha Ultra and Lux 2.4L diesel (2024–2026) and Ultra Hybrid (2024–2025), Cannon Vanta 2.0L diesel (2023–2024), Cannon-X and Cannon-L 2.0L diesel (2021–2024)
-- **Isuzu D-MAX** crew cab ute: SX 2.2L and 3.0L diesel and LS-U 3.0L diesel 4x2; SX and X-RIDER 2.2L and 3.0L diesel, LS-U, LS-U+, X-TERRAIN and BLADE 3.0L diesel 4x4
+- **Isuzu D-MAX** crew cab with tub: SX 2.2L and 3.0L diesel and LS-U 3.0L diesel 4x2; SX and X-RIDER 2.2L and 3.0L diesel, LS-U, LS-U+, X-TERRAIN and BLADE 3.0L diesel 4x4
 - **Isuzu MU-X** (SUV): LS-M 2.2L diesel 4x2; LS-M, LS-U and LS-T 2.2L and 3.0L diesel and X-TERRAIN 3.0L diesel 4x4
 
 The current GWM range uses the figures in GWM Australia's brochures (Cannon Alpha, 14 October 2026; Cannon, 16 October 2026): GVM, GCM, axle limits, kerb and tare weights, payload, towing, tyres and dimensions, and for the Cannon also the tub size and how the kerb weight splits between the axles. Earlier GWM models are no longer in a brochure; their weights and towing ratings come from Australian spec listings (CarExpert, carsales, Drive, CarsGuide, 4X4 Australia), and their axle limits, tare and tub sizes are typical values from the closest current model.
@@ -66,7 +66,7 @@ The Isuzus use Isuzu UTE Australia's 25.5MY D-MAX and MU-X brochures: GVM, GCM, 
 
 The MU-X is drawn as a generic five-seat SUV: two rows of seats, with the third row folded into the cargo floor behind them. Cargo area items in the palette go on that floor; use the x-ray view to drag them around inside.
 
-Values that are not published, or where sources disagree, are marked **placeholder** in the app until you change them or click the chip to mark them verified: always the tub (or cargo) floor height; for GWM models the track and front overhang; for Isuzus the tare, kerb weight split and tyre load index, and on a 4x2 the front axle rating (the brochures give it with the 4x4's front axle); and depending on the model the tub or cargo floor size, kerb weight split, tyre load index and, for earlier GWM models, the axle limits and other figures. Check them against your vehicle's placard, owner's manual and tow bar plate. Switching model keeps your readings, items and paint. Single and space cab models are not in the list because the 3D model is a dual cab. The caravan starts with example values for a 6 m tandem van.
+Values that are not published, or where sources disagree, are marked **placeholder** in the app until you change them or click the chip to mark them verified: always the tub (or cargo) floor height; for GWM models the track and front overhang; for Isuzus the tare, kerb weight split and tyre load index, and on a 4x2 the front axle rating (the brochures give it with the 4x4's front axle); and depending on the model the tub or cargo floor size, kerb weight split, tyre load index and, for earlier GWM models, the axle limits and other figures. Check them against your vehicle's placard, owner's manual and tow bar plate. Switching model keeps your readings, items and paint. Single and space cab models are not in the list because the 3D view draws dual cab and SUV bodies only. The caravan starts with example values for a 6 m tandem van.
 
 ## Develop
 
@@ -85,9 +85,9 @@ To release, publish a release on GitHub (Releases, "Draft a new release", pick o
 
 Code map:
 
-- `src/model/` load model (`calc.ts`), geometry, tyre tables, presets, trailer types (`trailers.ts`); no UI code. The tow vehicle is called `ute` in the code and in saved setups whatever its body (`ute.bodyStyle` says), and the towed vehicle `caravan` whatever its type (`caravan.kind`).
+- `src/model/` load model (`calc.ts`), geometry, tyre tables, presets, trailer types (`trailers.ts`); no UI code. For compatibility with saved setups the code still calls the vehicle `ute` whatever its body (`ute.bodyStyle`), and the towed vehicle `caravan` whatever its type (`caravan.kind`).
 - `src/state/` setups store (saved in the browser), UI state
-- `src/three/` 3D scene, vehicle models (ute and SUV bodies), drag and drop
+- `src/three/` 3D scene, vehicle models (dual cab and SUV bodies), drag and drop
 - `src/components/` panels, inspector, report
 
 ## License
