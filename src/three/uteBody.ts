@@ -202,8 +202,8 @@ export function makeUteShape(g: UteGeometry): UteShape {
   return { section, topZ, sideY, frontX, body: [front, tub, tail], greenhouse: greenhouse(g), archR };
 }
 
-/** Cab glasshouse: one rounded surface split into roof (paint), pillars and frames (trim) and glass. */
-function greenhouse(g: UteGeometry): THREE.BufferGeometry {
+/** The cab's outline: where the glasshouse starts and ends, its top line along the car and its width with height. */
+function cabTop(g: UteGeometry) {
   const rake = 1.15;
   const sStart = g.sWindscreen + (g.zBelt - g.zCowl) * rake;
   const sEnd = g.sCabBack - 10;
@@ -211,18 +211,59 @@ function greenhouse(g: UteGeometry): THREE.BufferGeometry {
   const rear = (s: number) => g.zBelt + ((g.zRoof - g.zBelt) * (sEnd - s)) / (sEnd - g.sRoofBack);
   const topAt = (s: number) => Math.max(g.zBelt + 2, softMin(softMin(windscreen(s), g.zRoof, 45), rear(s), 35));
   const halfAt = (z: number) => lerp(g.beltHalf, g.roofHalf, (z - g.zBelt) / (g.zRoof - g.zBelt));
+  /** Corner radius, the crown's rise and the half-width of the crowned top at s. */
+  const topShape = (s: number) => {
+    const zt = topAt(s);
+    const h = zt - g.zBelt;
+    const rt = Math.max(2, Math.min(110, h * 0.45));
+    return { zt, h, rt, sideTop: zt - rt, topHalf: halfAt(zt - rt) - rt, crown: (22 * h) / (g.zRoof - g.zBelt) };
+  };
+  /** Height of the roof skin at s, y. */
+  const roofZ = (s: number, y: number) => {
+    const { zt, topHalf, crown } = topShape(s);
+    return zt + crown * (1 - Math.min(1, (Math.abs(y) / Math.max(topHalf, 1)) ** 2));
+  };
+  return { sStart, sEnd, halfAt, topShape, roofZ };
+}
+
+/**
+ * A panel lying on the roof and following its crown: from s0 to s1 along the car, half-width w, corners of
+ * radius r, lift mm above the paint. Used for the sunroof's frame and glass.
+ */
+export function roofPanel(g: UteGeometry, s0: number, s1: number, w: number, r: number, lift: number): THREE.BufferGeometry {
+  const { roofZ } = cabTop(g);
+  const halfAt = (s: number) => {
+    const d = Math.min(s - s0, s1 - s);
+    return d >= r ? w : w - r + Math.sqrt(Math.max(0, r * r - (r - d) ** 2));
+  };
+  const xs = stationsBetween(s0, s1, 40, [
+    [s0, s0 + r, 8],
+    [s1 - r, s1, 8],
+  ]);
+  const across = 16;
+  return loft(
+    xs.map((s) => {
+      const hw = Math.max(halfAt(s), 0.5);
+      const pts: Pt[] = [];
+      for (let i = 0; i <= across; i++) {
+        const y = hw - (2 * hw * i) / across;
+        pts.push([y, roofZ(s, y) + lift]);
+      }
+      return { x: s, zones: [pts] };
+    }),
+  );
+}
+
+/** Cab glasshouse: one rounded surface split into roof (paint), pillars and frames (trim) and glass. */
+function greenhouse(g: UteGeometry): THREE.BufferGeometry {
+  const { sStart, sEnd, halfAt, topShape } = cabTop(g);
 
   type Tag = 'side' | 'corner' | 'top';
   const tags: Tag[] = [];
   const ringAt = (s: number) => {
-    const zt = topAt(s);
-    const h = zt - g.zBelt;
-    const rt = Math.max(2, Math.min(110, h * 0.45));
-    const sideTop = zt - rt;
+    const { zt, rt, sideTop, topHalf, crown } = topShape(s);
     const right: Pt[] = [[halfAt(g.zBelt), g.zBelt], ...line([halfAt(g.zBelt), g.zBelt], [halfAt(sideTop), sideTop], 5)];
     right.push(...arc(halfAt(sideTop) - rt, sideTop, rt, 0, Math.PI / 2, 6));
-    const topHalf = halfAt(sideTop) - rt;
-    const crown = (22 * h) / (g.zRoof - g.zBelt);
     for (let i = 1; i <= 4; i++) {
       const y = topHalf * (1 - i / 4);
       right.push([y, zt + crown * (1 - (y / Math.max(topHalf, 1)) ** 2)]);

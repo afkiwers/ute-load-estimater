@@ -22,6 +22,7 @@ const DRAW_OR_NAME_ONLY = [
   'ute.tub.floorHeight',
   'ute.tyre.size',
   'ute.paint',
+  'ute.sunroof',
   'hitch.ballHeight',
   'caravan.name',
   'caravan.bodyStart',

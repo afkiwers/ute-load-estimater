@@ -6,7 +6,7 @@ import { applyVehicle, PAINTS } from '../model/presets';
 import { VEHICLE_GROUPS, VEHICLES, vehicleModel } from '../model/vehicles';
 import { useStore } from '../state/store';
 import { useResult, useSetup } from '../state/result';
-import { IssueList, NumField, Section, TextField, flagFor } from './fields';
+import { IssueList, NumField, Section, TextField, Toggle, flagFor } from './fields';
 
 const SOURCE_TEXT: Record<UteBaselineSource, string> = {
   wheels: 'Baseline: measured per wheel',
@@ -130,7 +130,7 @@ export function UtePanel() {
         </div>
       </Section>
 
-      <Section title="Paint" extra={PAINTS.find((p) => p.color === setup.ute.paint)?.name ?? 'Custom'}>
+      <Section title="Appearance" extra={PAINTS.find((p) => p.color === setup.ute.paint)?.name ?? 'Custom'}>
         <div className="swatches">
           {PAINTS.map((p) => (
             <button
@@ -143,6 +143,9 @@ export function UtePanel() {
             />
           ))}
           <input type="color" value={setup.ute.paint} onChange={(e) => setPath('ute.paint', e.target.value)} title="Custom colour" aria-label="Custom colour" />
+        </div>
+        <div style={{ marginTop: 10 }}>
+          <Toggle path="ute.sunroof" label="Panoramic sunroof" />
         </div>
       </Section>
 

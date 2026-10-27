@@ -97,6 +97,8 @@ export interface UteSpec {
   kerbFrontPct: number;
   /** Body colour in the 3D view. */
   paint: string;
+  /** Panoramic sunroof in the 3D view. */
+  sunroof: boolean;
 }
 
 export interface HitchSpec {

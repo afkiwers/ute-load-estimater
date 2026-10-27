@@ -4,7 +4,7 @@ import type { HitchSpec, UteSpec } from '../model/types';
 import { toWorld, uteGeometry } from '../model/geometry';
 import { surfaceData, useArchFlare } from './parts';
 import { RBox, Strut, Wheel, useMaterials, useRingRect, type Materials } from './kit';
-import { makeUteShape, type UteShape } from './uteBody';
+import { makeUteShape, roofPanel, type UteShape } from './uteBody';
 
 interface Props {
   ute: UteSpec;
@@ -240,6 +240,29 @@ function Underbody({ g, m, ute }: { g: G; m: Materials; ute: UteSpec }) {
   );
 }
 
+/** Panoramic sunroof: tinted front and rear glass in a black frame, lying on the roof's crown between the rails. */
+function Sunroof({ g, m }: { g: G; m: Materials }) {
+  const panels = useMemo(() => {
+    const s0 = g.sWindscreenTop + 150;
+    const s1 = g.sRoofBack - 190;
+    const w = g.roofHalf - 230;
+    const bar = s0 + 0.48 * (s1 - s0);
+    return {
+      frame: roofPanel(g, s0 - 30, s1 + 30, w + 30, 150, 1.5),
+      front: roofPanel(g, s0, bar - 14, w, 110, 3),
+      rear: roofPanel(g, bar + 14, s1, w, 110, 3),
+    };
+  }, [g]);
+  useEffect(() => () => Object.values(panels).forEach((geo) => geo.dispose()), [panels]);
+  return (
+    <>
+      <mesh geometry={panels.frame} material={m.housing} receiveShadow />
+      <mesh geometry={panels.front} material={m.gloss} />
+      <mesh geometry={panels.rear} material={m.gloss} />
+    </>
+  );
+}
+
 /** Dual-cab ute with a factory tub, modelled on the Cannon Alpha's rounded body and scaled to the entered dimensions. */
 export function UteModel({ ute, hitch, xray }: Props) {
   const g = useMemo(() => uteGeometry(ute, hitch), [ute, hitch]);
@@ -273,6 +296,8 @@ export function UteModel({ ute, hitch, xray }: Props) {
       <RBox b={{ x0: sF + 150, x1: sF + 330, y0: -0.32 * W, y1: 0.32 * W, z0: protZ - 16, z1: protZ + 12 }} r={12} material={m.gloss} rotation={[0, 0, -protTilt]} />
 
       <FrontEnd g={g} m={m} shape={shape} xray={xray} />
+
+      {ute.sunroof && <Sunroof g={g} m={m} />}
 
       {/* Roof: clickable surface and rails */}
       <mesh

@@ -68,6 +68,8 @@ interface Def {
   body: Body;
   limits: UteLimits;
   tyre: { size: string; loadIndex: number };
+  /** Panoramic sunroof as standard (brochure "Panoramic Sunroof" or "Sunroof"). */
+  sunroof?: true;
   /** Paths whose values here are typical, on top of ALWAYS_TYPICAL. */
   typical: string[];
 }
@@ -144,6 +146,7 @@ const DEFS: Def[] = [
   // Current Cannon Alpha range (brochure, 14/10/2026). Tub sizes and the kerb weight split are not given.
   {
     id: 'alpha-vanta-30d',
+    sunroof: true,
     group: 'GWM Cannon Alpha',
     name: 'GWM Cannon Alpha Vanta 3.0L diesel',
     body: ALPHA,
@@ -162,6 +165,7 @@ const DEFS: Def[] = [
   },
   {
     id: 'alpha-ultra-phev',
+    sunroof: true,
     group: 'GWM Cannon Alpha',
     name: 'GWM Cannon Alpha Ultra PHEV',
     body: ALPHA,
@@ -182,6 +186,7 @@ const DEFS: Def[] = [
   // Current Cannon range (brochure, 16/10/2026), including the axle loads at kerb weight.
   {
     id: 'cannon-xsr-24d',
+    sunroof: true,
     group: 'GWM Cannon',
     name: 'GWM Cannon XSR 2.4L diesel',
     body: { ...CANNON, overallLength: 5439, overallWidth: 1958, overallHeight: 1893, kerbFrontPct: split(1345, 985) },
@@ -191,6 +196,7 @@ const DEFS: Def[] = [
   },
   {
     id: 'cannon-vanta-24d',
+    sunroof: true,
     group: 'GWM Cannon',
     name: 'GWM Cannon Vanta 2.4L diesel',
     body: CANNON_24D_BODY,
@@ -200,6 +206,7 @@ const DEFS: Def[] = [
   },
   {
     id: 'cannon-ultra-24d',
+    sunroof: true,
     group: 'GWM Cannon',
     name: 'GWM Cannon Ultra 2.4L diesel',
     body: CANNON_24D_BODY,
@@ -229,6 +236,7 @@ const DEFS: Def[] = [
   },
   {
     id: 'cannon-ultra-phev',
+    sunroof: true,
     group: 'GWM Cannon',
     name: 'GWM Cannon Ultra PHEV',
     body: CANNON_PHEV_BODY,
@@ -259,6 +267,7 @@ const DEFS: Def[] = [
   // values from the closest current model.
   {
     id: 'alpha-ultra-24d',
+    sunroof: true,
     group: 'Earlier models',
     name: 'GWM Cannon Alpha Ultra 2.4L diesel',
     years: '2024–2026',
@@ -279,6 +288,7 @@ const DEFS: Def[] = [
   },
   {
     id: 'alpha-ultra-hybrid',
+    sunroof: true,
     group: 'Earlier models',
     name: 'GWM Cannon Alpha Ultra Hybrid 2.0L petrol',
     years: '2024–2025',
@@ -329,6 +339,7 @@ export const VEHICLES: VehicleModel[] = DEFS.map((d) => ({
     ...structuredClone(d.body),
     tyre: { size: d.tyre.size, loadIndex: d.tyre.loadIndex, loadKg: null },
     limits: { ...d.limits },
+    sunroof: !!d.sunroof,
   }),
   placeholders: [...new Set([...ALWAYS_TYPICAL, ...d.typical])],
 }));
