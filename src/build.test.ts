@@ -23,7 +23,7 @@ describe('build info', () => {
     expect(rows.find((r) => r.label === 'Commit')).toEqual({
       label: 'Commit',
       value: '636249c',
-      href: 'https://github.com/afkiwers/ute-load-estimater/commit/636249c0d8b98c9542d644df87f46857b9e6d6c7',
+      href: 'https://github.com/afkiwers/vehicle-load-estimater/commit/636249c0d8b98c9542d644df87f46857b9e6d6c7',
     });
     expect(versionReport(rows, 'Chrome')).toBe(
       [

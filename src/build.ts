@@ -16,9 +16,9 @@ declare const __BUILD__: BuildStamp;
 
 export const BUILD: BuildStamp = __BUILD__;
 
-export const REPO_URL = 'https://github.com/afkiwers/ute-load-estimater';
-export const APP_URL = 'https://afkiwers.github.io/ute-load-estimater/';
-export const LATEST_RELEASE_API = 'https://api.github.com/repos/afkiwers/ute-load-estimater/releases/latest';
+export const REPO_URL = 'https://github.com/afkiwers/vehicle-load-estimater';
+export const APP_URL = 'https://afkiwers.github.io/vehicle-load-estimater/';
+export const LATEST_RELEASE_API = 'https://api.github.com/repos/afkiwers/vehicle-load-estimater/releases/latest';
 export const LICENSE = 'GPL-3.0-or-later';
 
 export function versionLabel(b: BuildStamp): string {

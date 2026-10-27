@@ -20,12 +20,12 @@ describe('share links', () => {
   });
 
   it('stays short enough for messages and QR codes', async () => {
-    const url = shareUrl(await encodeSetup(loaded()), { protocol: 'https:', origin: 'https://afkiwers.github.io', pathname: '/ute-load-estimater/' });
+    const url = shareUrl(await encodeSetup(loaded()), { protocol: 'https:', origin: 'https://afkiwers.github.io', pathname: '/vehicle-load-estimater/' });
     expect(url.length).toBeLessThan(2500);
   });
 
   it('points a downloaded copy at the online app, and anything else at itself', () => {
-    expect(shareUrl('zAB', { protocol: 'file:', origin: 'null', pathname: '/x.html' })).toBe('https://afkiwers.github.io/ute-load-estimater/#s=zAB');
+    expect(shareUrl('zAB', { protocol: 'file:', origin: 'null', pathname: '/x.html' })).toBe('https://afkiwers.github.io/vehicle-load-estimater/#s=zAB');
     expect(shareUrl('zAB', { protocol: 'http:', origin: 'http://localhost:5173', pathname: '/' })).toBe('http://localhost:5173/#s=zAB');
   });
 

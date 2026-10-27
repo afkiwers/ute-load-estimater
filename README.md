@@ -8,12 +8,12 @@
 
 Plan and check the loading of a ute or SUV and the caravan it tows. Enter your weighbridge readings and the manufacturer limits, drag accessories and gear onto a 3D model, and see the axle, wheel, tow ball and combination loads update against every limit.
 
-**[Open it in your browser](https://afkiwers.github.io/ute-load-estimater/)**, or **[download vehicle-load-estimator.html](https://github.com/afkiwers/ute-load-estimater/releases/latest/download/vehicle-load-estimator.html)** to use it offline ([release notes](https://github.com/afkiwers/ute-load-estimater/releases/latest))
+**[Open it in your browser](https://afkiwers.github.io/vehicle-load-estimater/)**, or **[download vehicle-load-estimator.html](https://github.com/afkiwers/vehicle-load-estimater/releases/latest/download/vehicle-load-estimator.html)** to use it offline ([release notes](https://github.com/afkiwers/vehicle-load-estimater/releases/latest))
 
 ## Use it
 
-- **Online:** open [afkiwers.github.io/ute-load-estimater](https://afkiwers.github.io/ute-load-estimater/). It always runs the latest release.
-- **Offline:** download [`vehicle-load-estimator.html` from the latest release](https://github.com/afkiwers/ute-load-estimater/releases/latest/download/vehicle-load-estimator.html) and double-click it. It opens in Chrome straight from disk: no web server, no install, no internet needed (only the update check in the About box goes online). The current development version is in the repo root ([`vehicle-load-estimator.html`](vehicle-load-estimator.html), "Download raw file").
+- **Online:** open [afkiwers.github.io/vehicle-load-estimater](https://afkiwers.github.io/vehicle-load-estimater/). It always runs the latest release.
+- **Offline:** download [`vehicle-load-estimator.html` from the latest release](https://github.com/afkiwers/vehicle-load-estimater/releases/latest/download/vehicle-load-estimator.html) and double-click it. It opens in Chrome straight from disk: no web server, no install, no internet needed (only the update check in the About box goes online). The current development version is in the repo root ([`vehicle-load-estimator.html`](vehicle-load-estimator.html), "Download raw file").
 
 To give someone a copy of a setup, press **Share**: on a phone it opens the share sheet (Messages, WhatsApp, email, AirDrop), elsewhere it copies a link. The setup travels inside the link itself, nothing is uploaded, and opening the link offers to add it as a new setup next to the recipient's own.
 
