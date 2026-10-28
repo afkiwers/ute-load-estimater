@@ -13,7 +13,7 @@ Plan and check the loading of a vehicle and the caravan it tows. Enter your weig
 ## Use it
 
 - **Online:** open [afkiwers.github.io/vehicle-load-estimater](https://afkiwers.github.io/vehicle-load-estimater/). It always runs the latest release.
-- **Offline:** download [`vehicle-load-estimator.html` from the latest release](https://github.com/afkiwers/vehicle-load-estimater/releases/latest/download/vehicle-load-estimator.html) and double-click it. It opens in Chrome straight from disk: no web server, no install, no internet needed (only the update check in the About box goes online). The current development version is in the repo root ([`vehicle-load-estimator.html`](vehicle-load-estimator.html), "Download raw file").
+- **Offline:** download [`vehicle-load-estimator.html` from the latest release](https://github.com/afkiwers/vehicle-load-estimater/releases/latest/download/vehicle-load-estimator.html) and double-click it. It opens in Chrome straight from disk: no web server, no install, no internet needed (only the update check in the About box and the analytics script go online, and copies opened from disk are not counted). The current development version is in the repo root ([`vehicle-load-estimator.html`](vehicle-load-estimator.html), "Download raw file").
 
 To give someone a copy of a setup, press **Share**: on a phone it opens the share sheet (Messages, WhatsApp, email, AirDrop), elsewhere it copies a link. The setup travels inside the link itself, nothing is uploaded, and opening the link offers to add it as a new setup next to the recipient's own.
 
@@ -70,6 +70,10 @@ The Isuzus use Isuzu UTE Australia's 25.5MY D-MAX and MU-X brochures: GVM, GCM, 
 The MU-X is drawn as a generic five-seat SUV: two rows of seats, with the third row folded into the cargo floor behind them. Cargo area items in the palette go on that floor; use the x-ray view to drag them around inside.
 
 Values that are not published, or where sources disagree, are marked **placeholder** in the app until you change them or click the chip to mark them verified: always the tub (or cargo) floor height; for GWM models the track and front overhang; for Isuzus the kerb weight split, the MU-X tare and the load index of 18 and 20-inch tyres, and on a 4x2 the front axle rating (the brochures give it with the 4x4's front axle); and depending on the model the tub or cargo floor size, kerb weight split, tyre load index and, for earlier GWM models, the axle limits and other figures. Check them against your vehicle's placard, owner's manual and tow bar plate. The tow ball starts 200 mm behind the rear bumper, also a placeholder until you measure it from the rear axle centre. Switching model keeps your readings, items, paint and a measured tow ball position. Single and space cab models are not in the list because the 3D view draws dual cab and SUV bodies only. The caravan starts with example values for a 6 m tandem van.
+
+## Privacy
+
+The online page counts visits with [Plausible Analytics](https://plausible.io), self-hosted and privacy-friendly: no cookies, no personal data. Only the page address is sent, without the part after `#`, so a shared setup never leaves the browser. Your setups are stored in your browser only.
 
 ## Develop
 

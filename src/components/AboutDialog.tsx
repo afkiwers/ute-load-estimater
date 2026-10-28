@@ -112,6 +112,17 @@ export function AboutDialog({ onClose }: { onClose: () => void }) {
           ))}
         </tbody>
       </table>
+      <div className="about-section">
+        <h3>Privacy</h3>
+      </div>
+      <p className="about-note">
+        Visits to the online page are counted with{' '}
+        <a href="https://plausible.io" target="_blank" rel="noreferrer">
+          Plausible Analytics
+        </a>
+        , which uses no cookies and collects no personal data. Your setups stay in your browser: neither they nor share links are sent, and copies
+        opened from a downloaded file are not counted.
+      </p>
       <p className="about-note">
         Free software: you can redistribute and modify it under the GNU General Public License, version 3 or any later version. It comes with
         absolutely no warranty.

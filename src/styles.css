@@ -1535,12 +1535,14 @@ table.loads tr.total td {
   overflow-wrap: anywhere;
 }
 
-.about-table a {
+.about-table a,
+.about-note a {
   color: var(--info);
   text-decoration: none;
 }
 
-.about-table a:hover {
+.about-table a:hover,
+.about-note a:hover {
   text-decoration: underline;
 }
 
