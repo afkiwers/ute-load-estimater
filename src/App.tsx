@@ -15,6 +15,7 @@ import { ItemsPanel } from './components/ItemsPanel';
 import { Report } from './components/Report';
 import { deleteItem, duplicateItem } from './components/Inspector';
 import { SharedSetupDialog } from './components/ShareDialog';
+import { Disclaimer } from './components/Disclaimer';
 
 const DOT: Record<string, string> = {
   ok: 'var(--ok)',
@@ -147,6 +148,7 @@ export function App() {
         <Viewport />
         <SidePanel />
       </main>
+      <Disclaimer />
       <Toast />
       <Report />
       {shared && <SharedSetupDialog setup={shared} onClose={closeShared} />}

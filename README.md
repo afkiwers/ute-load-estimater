@@ -17,6 +17,8 @@ Plan and check the loading of a vehicle and the caravan it tows. Enter your weig
 
 To give someone a copy of a setup, press **Share**: on a phone it opens the share sheet (Messages, WhatsApp, email, AirDrop), elsewhere it copies a link. The setup travels inside the link itself, nothing is uploaded, and opening the link offers to add it as a new setup next to the recipient's own.
 
+The first time you open it, a banner reminds you that the results are estimates only and asks you to confirm them on a weighbridge or with a mobile weighing service before you travel; once you acknowledge it, it stays away.
+
 Your setups are saved in the browser automatically. The online page and a downloaded file keep separate lists, so use **Export** to keep a backup file or move setups to another computer or between the two, and **Import** to load one.
 
 ## What it does

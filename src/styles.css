@@ -1583,6 +1583,44 @@ table.loads tr.total td {
   color: var(--muted);
 }
 
+/* Until acknowledged once: the results are estimates to confirm on real scales. */
+.disclaimer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* Under dialogs and the items drawer, over the page. */
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  background: var(--near-soft);
+  border-top: 3px solid var(--near);
+  box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.12);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.disclaimer-text {
+  flex: 1;
+  min-width: 0;
+  max-width: 900px;
+}
+
+.disclaimer .btn {
+  flex: none;
+}
+
+@media (max-width: 640px) {
+  .disclaimer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+}
+
 .toast {
   position: fixed;
   bottom: 22px;
