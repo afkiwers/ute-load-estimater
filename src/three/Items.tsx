@@ -47,8 +47,14 @@ interface Section {
 /** Strips of the hull side, between consecutive section points: what each one is painted. */
 const HULL_STRIPS = ['hull', 'hull', 'hull', 'accent', 'hull', 'trim'] as const;
 
+/** Share of the length behind the transom taken by the swim platform. */
+const PLATFORM = 0.08;
+
+/** Fore-and-aft position of a share s of the hull from the transom (0) to the bow (1); the swim platform is aft of 0. */
+const hullX = (s: number, l: number) => -l / 2 + l * (PLATFORM + s * (1 - PLATFORM));
+
 function hullSection(s: number, l: number, w: number, h: number): Section {
-  const x = -l / 2 + s * l;
+  const x = hullX(s, l);
   // Full beam aft, a full bow drawn to a point.
   const halfBeam = s <= 0.45 ? (w / 2) * (0.94 + 0.06 * (s / 0.45)) : (w / 2) * Math.max(0, 1 - Math.pow((s - 0.45) / 0.55, 1.8));
   // The sheer sweeps up to a high bow; the forefoot rises in a long curve, so the stem rakes forward.
@@ -142,13 +148,27 @@ function hullGeometry(l: number, w: number, h: number) {
 
   // Transom: the stern outline closed across the deck, as a fan facing aft.
   const ring = [...right[0], ...left[0]];
-  const c: V3 = [-l / 2, (ring[0][1] + sections[0].sheerY) / 2, 0];
+  const c: V3 = [sections[0].x, (ring[0][1] + sections[0].sheerY) / 2, 0];
   const t = skins.transom;
   t.pos.push(...c, ...ring.flat());
   for (let i = 0; i < ring.length; i++) t.index.push(0, 1 + i, 1 + ((i + 1) % ring.length));
   return { ...Object.fromEntries(Object.entries(skins).map(([k, v]) => [k, v.geometry()])), floorY } as Record<keyof typeof skins, THREE.BufferGeometry> & {
     floorY: number;
   };
+}
+
+/** A round bar between two points (metres). */
+function Bar({ a, b, r, color, opacity }: { a: V3; b: V3; r: number; color: string; opacity: number }) {
+  const va = new THREE.Vector3(...a);
+  const vb = new THREE.Vector3(...b);
+  const dir = vb.clone().sub(va);
+  const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+  return (
+    <mesh position={va.add(vb).multiplyScalar(0.5)} quaternion={q} castShadow>
+      <cylinderGeometry args={[r, r, dir.length(), 12]} />
+      <Mat color={color} opacity={opacity} roughness={0.3} metalness={0.6} />
+    </mesh>
+  );
 }
 
 /** A tube along a smooth curve through the points (metres). */
@@ -167,6 +187,7 @@ const ACCENT = '#c41e2c';
 const UPHOLSTERY = '#d3d6da';
 const TRIM = '#16181b';
 const FLOOR = '#4b5057';
+const BRONZE = '#c9a23a';
 
 /** A padded cushion: a rounded block (metres, centre and size). */
 function Cushion({ p, s, color, opacity }: { p: V3; s: V3; color: string; opacity: number }) {
@@ -207,9 +228,10 @@ function useWindscreen(l: number, w: number, h: number) {
 }
 
 /**
- * Wake boat: a deep V hull with a raked bow, spray rails, a flared knuckle with an accent line and a rub rail; a
+ * Wake boat with an inboard engine: a deep V hull with a raked bow, spray rails, a flared knuckle with an accent line and a rub rail; a
  * cockpit recessed to the floor height the palette places gear on, with wrap-around seating, helm and passenger
- * consoles, a curved windscreen and a swept wakeboard tower with speakers. The hull colour is the item's.
+ * consoles, a curved windscreen and a swept wakeboard tower with speakers; the engine hatch aft, the shaft, propeller and
+ * rudder under the hull, and a swim platform across the stern. The hull colour is the item's.
  */
 function BoatHull({ size, color, opacity, outline, userData, events }: Omit<ShapeProps, 'shape'> & { events: Record<string, unknown> }) {
   const l = size.l / 1000;
@@ -221,11 +243,14 @@ function BoatHull({ size, color, opacity, outline, userData, events }: Omit<Shap
   useEffect(() => () => screen.glass.dispose(), [screen]);
 
   const at = (s: number) => hullSection(s, l, w, h);
-  const x = (s: number) => -l / 2 + s * l;
+  const x = (s: number) => hullX(s, l);
   const inner = (s: number) => at(s).edge - Math.min(0.2, 0.32 * at(s).edge);
   const f = geo.floorY;
   const seatH = Math.min(0.4, (at(0.3).sheerY - f) * 0.75);
   const seatW = Math.min(0.45, inner(0.3) * 0.45);
+  const hatchW = Math.min(0.9, inner(0.17) * 0.9);
+  const platformY = -h / 2 + 0.3 * h;
+  const platformW = 2 * at(0).edge;
   const seat = (s0: number, s1: number, z0: number, z1: number, back: 'out' | 'aft' | 'none') => {
     const cx = (x(s0) + x(s1)) / 2;
     const cz = (z0 + z1) / 2;
@@ -297,7 +322,45 @@ function BoatHull({ size, color, opacity, outline, userData, events }: Omit<Shap
       </mesh>
 
       {/* Wrap-around seating aft, side seats, helm and passenger consoles, bow seating. */}
-      {seat(COCKPIT[0] + 0.01, 0.17, -inner(0.17), inner(0.17), 'aft')}
+      {/* Inboard engine under a hatch aft, with a seat either side of it. */}
+      {[-1, 1].map((sgn) => seat(COCKPIT[0] + 0.01, 0.17, sgn * hatchW / 2, sgn * inner(0.17), 'aft'))}
+      <RoundedBox position={[(x(COCKPIT[0] + 0.01) + x(0.2)) / 2, f + seatH * 0.6, 0]} args={[x(0.2) - x(COCKPIT[0] + 0.01), seatH * 1.2, hatchW - 0.04]} radius={0.05} smoothness={3} castShadow>
+        <Mat color="#2a2e33" opacity={opacity} roughness={0.5} />
+      </RoundedBox>
+      {[0.3, 0.45, 0.6, 0.75].map((k) => (
+        <mesh key={k} position={[x(COCKPIT[0] + 0.01) + k * (x(0.2) - x(COCKPIT[0] + 0.01)), f + seatH * 1.205, 0]}>
+          <boxGeometry args={[0.035, 0.01, hatchW * 0.6]} />
+          <Mat color="#5b6168" opacity={opacity} />
+        </mesh>
+      ))}
+
+      {/* Swim platform across the stern, on brackets from the transom. */}
+      <RoundedBox position={[(-l / 2 + x(0) + 0.04) / 2, platformY, 0]} args={[x(0) + 0.04 + l / 2, 0.07, platformW]} radius={0.03} smoothness={3} castShadow receiveShadow userData={userData}>
+        <Mat color="#9a8f82" opacity={opacity} roughness={0.9} />
+      </RoundedBox>
+      {[-1, 1].map((sgn) => (
+        <mesh key={`bracket${sgn}`} position={[x(0) - 0.12, platformY - 0.07, sgn * platformW * 0.3]} castShadow>
+          <boxGeometry args={[0.24, 0.08, 0.06]} />
+          <Mat color={TRIM} opacity={opacity} />
+        </mesh>
+      ))}
+
+      {/* Running gear under the hull: shaft from the engine, strut, propeller and rudder. */}
+      <Bar a={[x(0.34), -h / 2 + 0.03, 0]} b={[x(0.1), -h / 2 - 0.08, 0]} r={0.022} color="#9aa1a8" opacity={opacity} />
+      <mesh position={[x(0.2), -h / 2 - 0.03, 0]}>
+        <boxGeometry args={[0.04, 0.1, 0.03]} />
+        <Mat color={BRONZE} opacity={opacity} metalness={0.6} roughness={0.35} />
+      </mesh>
+      {[0, 1, 2, 3].map((k) => (
+        <mesh key={`blade${k}`} position={[x(0.1), -h / 2 - 0.08, 0]} rotation={[(k * Math.PI) / 2 + 0.3, 0, 0]}>
+          <boxGeometry args={[0.03, 0.15, 0.08]} />
+          <Mat color={BRONZE} opacity={opacity} metalness={0.6} roughness={0.35} />
+        </mesh>
+      ))}
+      <mesh position={[x(0.06), -h / 2 - 0.08, 0]}>
+        <boxGeometry args={[0.16, 0.22, 0.02]} />
+        <Mat color={BRONZE} opacity={opacity} metalness={0.6} roughness={0.35} />
+      </mesh>
       {[-1, 1].map((sgn) => seat(0.17, 0.48, sgn * (inner(0.3) - seatW), sgn * inner(0.3), 'out'))}
       {[-1, 1].map((sgn) => (
         <group key={`console${sgn}`}>
