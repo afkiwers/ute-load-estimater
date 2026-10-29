@@ -8,6 +8,7 @@ import { useResult } from '../state/result';
 import { labelLayer, sceneBridge, useUi, type ViewPreset } from '../state/ui';
 import { Scene } from '../three/Scene';
 import { Inspector } from './Inspector';
+import { SlopeBanner, SlopeNotice } from './SlopeNotice';
 import { paletteDrag } from './Palette';
 import { STATUS_TEXT } from './ResultsPanel';
 
@@ -189,6 +190,8 @@ export function Viewport() {
         <div className="label-layer" ref={(el) => void (labelLayer.current = el)} />
         <Scene />
         <ViewToolbar />
+        <SlopeBanner />
+        <SlopeNotice />
         <div className="view-hint">
           <span className="only-mouse">Drag items to move them · left-drag to orbit · right-drag to pan · scroll to zoom</span>
           <span className="only-touch">One finger to orbit · two fingers to pan and zoom · tap an item to edit it</span>

@@ -41,6 +41,8 @@ interface UiState {
   paletteOpen: boolean;
   /** Road gradient in % the combination stands on: + climbing, − descending. A what-if, not saved with the setup. */
   slope: number;
+  /** The warning that slope results are illustrative only, shown each time the vehicle leaves level ground. */
+  slopeNotice: boolean;
 
   setTab: (t: Tab) => void;
   select: (id: string | null) => void;
@@ -53,6 +55,7 @@ interface UiState {
   setSnapshot: (s: string | null) => void;
   setPaletteOpen: (open: boolean) => void;
   setSlope: (grade: number) => void;
+  closeSlopeNotice: () => void;
 }
 
 export const useUi = create<UiState>()((set) => ({
@@ -67,6 +70,7 @@ export const useUi = create<UiState>()((set) => ({
   snapshot: null,
   paletteOpen: paletteDefault(),
   slope: 0,
+  slopeNotice: false,
 
   setTab: (tab) => set({ tab }),
   select: (selectedId) => set({ selectedId }),
@@ -87,7 +91,8 @@ export const useUi = create<UiState>()((set) => ({
     }
     set({ paletteOpen });
   },
-  setSlope: (slope) => set({ slope }),
+  setSlope: (slope) => set((s) => ({ slope, slopeNotice: s.slopeNotice || (s.slope === 0 && slope !== 0) })),
+  closeSlopeNotice: () => set({ slopeNotice: false }),
 }));
 
 /** Bridges the three.js scene to DOM handlers (palette drops, report snapshots). */
