@@ -94,7 +94,7 @@ export function Inspector() {
                 <option value="cylinder">Cylinder</option>
                 <option value="person">Person</option>
                 <option value="bullbar">Bull bar</option>
-                <option value="boat">Boat hull</option>
+                <option value="boat">Boat</option>
                 <option value="outboard">Outboard motor</option>
               </select>
             </span>

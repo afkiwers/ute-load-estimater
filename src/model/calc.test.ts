@@ -504,6 +504,20 @@ describe('trailer types', () => {
     expect(s.placeholders).not.toContain('caravan.axles.1');
   });
 
+  it('renames a saved boat that still has the old default name, keeping its figures', () => {
+    const s = newSetup();
+    applyTrailerKind(s, 'boat');
+    const boat = s.items.find((i) => i.templateId === 'boatHull')!;
+    expect(boat.name).toBe('Boat');
+    Object.assign(boat, { name: 'Boat hull, 5.3 m aluminium', mass: 550 });
+    const loaded = normalizeSetup(JSON.parse(JSON.stringify(s)));
+    const again = loaded.items.find((i) => i.templateId === 'boatHull')!;
+    expect(again.name).toBe('Boat');
+    expect(again.mass).toBe(550);
+    boat.name = 'Our ski boat';
+    expect(normalizeSetup(JSON.parse(JSON.stringify(s))).items.find((i) => i.templateId === 'boatHull')!.name).toBe('Our ski boat');
+  });
+
   it('puts the boat and fuel on a boat trailer with a sensible ball weight', () => {
     const s = newSetup();
     applyTrailerKind(s, 'boat');

@@ -52,7 +52,12 @@ export function normalizeSetup(input: Partial<Setup>): Setup {
     return val;
   };
   const merged = merge(base, raw) as Setup;
-  merged.items = (raw.items ?? []).map((it) => ({ ...it, id: it.id ?? uid() }));
+  merged.items = (raw.items ?? []).map((it) => ({
+    ...it,
+    id: it.id ?? uid(),
+    // The boat used to be added under a name that described one particular hull; it is just "Boat" now.
+    name: it.templateId === 'boatHull' && it.name === OLD_BOAT_NAME ? 'Boat' : it.name,
+  }));
   merged.placeholders = raw.placeholders ?? [];
   // Sizes the fields never allow at 0 or below (a hand-edited file) take the model's or trailer type's instead.
   const defaults = { ute: vehicleSpec(merged.ute.model), caravan: trailerPreset(merged.caravan.kind), hitch: base.hitch };
@@ -64,6 +69,8 @@ export function normalizeSetup(input: Partial<Setup>): Setup {
   if (!axlesOk(merged.caravan.weighedAxles)) merged.caravan.weighedAxles = [...merged.caravan.axles];
   return merged;
 }
+
+const OLD_BOAT_NAME = 'Boat hull, 5.3 m aluminium';
 
 const SIZES = [
   'ute.wheelbase',
