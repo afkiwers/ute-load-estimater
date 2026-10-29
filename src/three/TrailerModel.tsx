@@ -57,7 +57,10 @@ function DrawbarPlate({ c, m, offset, railY }: { c: CaravanGeometry; m: Material
   );
 }
 
-/** Drawbar, jockey wheel, running gear and (for small trailers) mudguards, shared by every trailer type. */
+/**
+ * Drawbar, running gear and (for small trailers) mudguards, shared by every trailer type. No jockey wheel: hitched, it is wound up
+ * and carries nothing, and drawn on the ground it looked as if it took some of the ball weight.
+ */
 function Chassis({ cv, c, m, offset, accent, hitch }: BodyProps & { hitch: HitchSpec }) {
   const v = { host: 'caravan' as const, offset };
   const half = cv.bodyWidth / 2;
@@ -92,12 +95,6 @@ function Chassis({ cv, c, m, offset, accent, hitch }: BodyProps & { hitch: Hitch
         </mesh>
       ))}
       {!central && <DrawbarPlate c={c} m={m} offset={offset} railY={railY} />}
-      <mesh position={toWorld('caravan', { x: 520, y: 0, z: (c.drawbarZ + 120) / 2 }, offset)} material={m.chassis}>
-        <cylinderGeometry args={[0.03, 0.03, (c.drawbarZ - 120) / 1000, 12]} />
-      </mesh>
-      <mesh position={toWorld('caravan', { x: 520, y: 0, z: 80 }, offset)} rotation={[Math.PI / 2, 0, 0]} material={m.plastic}>
-        <cylinderGeometry args={[0.08, 0.08, 0.06, 20]} />
-      </mesh>
 
       {hitch.wdh.enabled &&
         [-1, 1].map((side) => (
