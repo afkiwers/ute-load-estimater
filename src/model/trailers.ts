@@ -14,7 +14,7 @@ export interface TrailerKindInfo {
 
 export const TRAILER_KINDS: TrailerKindInfo[] = [
   { kind: 'caravan', label: 'Caravan', noun: 'caravan', description: 'Tandem 6 m caravan' },
-  { kind: 'boat', label: 'Boat & trailer', noun: 'boat trailer', description: '5.3 m runabout on a single-axle trailer' },
+  { kind: 'boat', label: 'Boat & trailer', noun: 'boat trailer', description: '6.2 m fibreglass wake boat on a tandem trailer' },
   { kind: 'enclosed', label: 'Enclosed trailer', noun: 'trailer', description: '8×5 enclosed tandem trailer' },
   { kind: 'open', label: 'Open trailer', noun: 'trailer', description: '7×5 box trailer with low sides, unbraked' },
 ];
@@ -68,15 +68,15 @@ function presetSpec(kind: TrailerKind): Omit<CaravanSpec, 'weighedAxles'> {
         kind,
         name: 'Boat trailer',
         hasBrakes: true,
-        axles: [5000],
-        track: 1750,
+        axles: [4200, 5050],
+        track: 1950,
         bodyStart: 800,
-        bodyLength: 5800,
-        bodyWidth: 1900,
-        bodyHeight: 900,
-        floorHeight: 650,
+        bodyLength: 6600,
+        bodyWidth: 2300,
+        bodyHeight: 1000,
+        floorHeight: 700,
         tyre: { ...SMALL_TYRE },
-        limits: { atm: 1400, gtm: 1300, tare: 380, tareBall: 35, tgalr: 1400 },
+        limits: { atm: 3000, gtm: 2800, tare: 650, tareBall: 65, tgalr: 3000 },
       };
     case 'enclosed':
       return {

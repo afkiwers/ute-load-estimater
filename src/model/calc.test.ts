@@ -504,19 +504,19 @@ describe('trailer types', () => {
     expect(s.placeholders).not.toContain('caravan.axles.1');
   });
 
-  it('puts the boat, motor and fuel on a boat trailer with a sensible ball weight', () => {
+  it('puts the boat and fuel on a boat trailer with a sensible ball weight', () => {
     const s = newSetup();
     applyTrailerKind(s, 'boat');
     const boatItems = s.items.filter((i) => i.host === 'caravan');
-    expect(boatItems.map((i) => i.templateId)).toEqual(['boatHull', 'outboard', 'boatFuel']);
-    const hull = boatItems[0];
-    const motor = boatItems[1];
-    // Motor hangs off the transom, fuel sits inside the hull.
-    expect(motor.pos.x).toBeGreaterThan(hull.pos.x + hull.size.l / 2 - 200);
-    expect(boatItems[2].pos.z).toBeLessThan(hull.pos.z + hull.size.h / 2);
+    // The wake boat's engine is inboard, part of the hull's mass.
+    expect(boatItems.map((i) => i.templateId)).toEqual(['boatHull', 'boatFuel']);
+    const [hull, fuel] = boatItems;
+    // Fuel sits inside the hull.
+    expect(fuel.pos.z).toBeLessThan(hull.pos.z + hull.size.h / 2);
     const r = compute(s);
-    expect(r.caravan!.ballPct).toBeGreaterThan(7);
-    expect(r.caravan!.ballPct).toBeLessThan(13);
+    expect(r.caravan!.ballPct).toBeGreaterThan(8);
+    expect(r.caravan!.ballPct).toBeLessThan(12);
+    expect(r.checks.filter((c) => c.status === 'over')).toEqual([]);
     expect(r.checks.find((c) => c.id === 'atm')!.label).toBe('Boat trailer mass vs ATM');
   });
 
