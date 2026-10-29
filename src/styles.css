@@ -1169,6 +1169,34 @@ table.loads tr.total td {
   font-weight: 600;
 }
 
+.view-toolbar .slope {
+  align-items: center;
+}
+
+.view-toolbar .slope-label {
+  padding: 0 4px 0 9px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.view-toolbar .slope input[type='range'] {
+  width: 110px;
+  margin: 0 6px;
+  accent-color: var(--accent);
+}
+
+.view-toolbar .slope button {
+  min-width: 58px;
+  border-left: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+}
+
+.view-toolbar .slope button:disabled {
+  color: var(--muted);
+  cursor: default;
+  background: transparent;
+}
+
 .view-hint {
   position: absolute;
   bottom: 10px;

@@ -6,7 +6,8 @@ import { trailerPreset } from './trailers';
 import type { Setup } from './types';
 
 // Every field a person can edit must change the results somewhere, unless it only names or
-// draws something. A new field that is never wired into the calculation fails here.
+// draws something. A new field that is never wired into the calculation fails here. The body heights and the
+// tow ball height count on a slope, where they set the centres of mass and the drawbar pull's lever.
 
 const DRAW_OR_NAME_ONLY = [
   'name',
@@ -15,7 +16,6 @@ const DRAW_OR_NAME_ONLY = [
   'ute.bodyStyle',
   'ute.overallLength',
   'ute.overallWidth',
-  'ute.overallHeight',
   'ute.frontOverhang',
   'ute.tub.length',
   'ute.tub.width',
@@ -24,13 +24,10 @@ const DRAW_OR_NAME_ONLY = [
   'ute.tyre.size',
   'ute.paint',
   'ute.sunroof',
-  'hitch.ballHeight',
   'caravan.name',
   'caravan.bodyStart',
   'caravan.bodyLength',
   'caravan.bodyWidth',
-  'caravan.bodyHeight',
-  'caravan.floorHeight',
 ];
 
 /** Editable leaves of a setup as dotted paths. Items are edited in their own panel. */
@@ -95,12 +92,14 @@ const SCENARIOS: Record<string, () => Setup> = {
 
 describe('inputs', () => {
   it('every field changes the results, unless it only names or draws something', () => {
+    // On a slope too: the body heights set the assumed centres of mass, which only matter there.
+    const results = (s: Setup) => JSON.stringify([compute(s), compute(s, { grade: 12 })]);
     const unused = fields(newSetup()).filter((path) =>
       Object.values(SCENARIOS).every((make) => {
         const s = make();
-        const before = JSON.stringify(compute(s));
+        const before = results(s);
         set(s, path, another(get(s, path), path));
-        return JSON.stringify(compute(s)) === before;
+        return results(s) === before;
       }),
     );
     expect(unused.sort()).toEqual([...DRAW_OR_NAME_ONLY].sort());

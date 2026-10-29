@@ -19,7 +19,7 @@ import type {
   Vec3,
 } from './types';
 import { kg, mm, num, pct, signedKg } from './format';
-import { axleCentre } from './geometry';
+import { axleCentre, caravanCogHeight, uteCogHeight } from './geometry';
 import { trailerName } from './trailers';
 import { hasLoadRating, loadIndexKg, tyreDiameter, tyreLoadKg } from './tyres';
 
@@ -106,6 +106,8 @@ export interface CaravanResult {
   ballPct: number;
   /** The trailer's own weight moved to where the axles are now, if they moved since weighing. */
   axleMove: { from: number; to: number; ballBefore: number; ballAfter: number } | null;
+  /** Load the slope moved from the tow ball onto the axle group (negative: onto the ball). */
+  slopeToAxles: number;
 }
 
 export interface HitchResult {
@@ -127,6 +129,8 @@ export interface UteResult {
   items: WheelLoads;
   hitch: WheelLoads;
   unhitched: WheelLoads;
+  /** Load the slope moves between the axles: the vehicle's own weight and the trailer pulling (or pushing) on the ball. */
+  slope: WheelLoads;
   total: WheelLoads;
   front: number;
   rear: number;
@@ -144,8 +148,21 @@ export interface Headroom {
   gcm: number | null;
 }
 
+/** The road's gradient. Positive climbs (nose up), negative descends. */
+export interface SlopeResult {
+  /** Rise over run, %. */
+  grade: number;
+  degrees: number;
+  /** Assumed centre of mass heights of the vehicle and the trailer as weighed (mm). */
+  uteCog: number;
+  trailerCog: number | null;
+  /** Along the slope, how much of the trailer's weight hangs on the tow ball (kg, + = pulls back). */
+  drawbar: number;
+}
+
 export interface Result {
   ute: UteResult;
+  slope: SlopeResult;
   caravan: CaravanResult | null;
   hitch: HitchResult | null;
   checks: Check[];
@@ -599,8 +616,21 @@ function minOf(...values: (number | null | undefined)[]): number | null {
   return real.length ? Math.min(...real) : null;
 }
 
-export function compute(setup: Setup): Result {
+export interface ComputeOptions {
+  /** Road gradient in % (rise over run): positive climbs nose up, negative descends. */
+  grade?: number;
+}
+
+/** Steepest gradient the model takes, in %. Beyond this nobody is towing anything. */
+export const MAX_GRADE = 60;
+
+export function compute(setup: Setup, opts: ComputeOptions = {}): Result {
   const { hitch, settings: s } = setup;
+  const grade = Math.min(Math.max(Number.isFinite(opts.grade) ? opts.grade! : 0, -MAX_GRADE), MAX_GRADE);
+  // On a slope each mass's weight leans along the road. Taken in the road's frame, a mass at height z acts like one
+  // z·tan θ further downhill, so its share moves toward the lower axle. Loads stay normalised to the masses (the
+  // slope's cos θ, under 2% up to 20%, is left out) so they still add up and compare with the ratings.
+  const tan = grade / 100;
   // The fields never allow sizes this small, but an imported file might: keep the shares finite.
   const ute = { ...setup.ute, wheelbase: atLeast(setup.ute.wheelbase, 1000), trackFront: atLeast(setup.ute.trackFront, 500), trackRear: atLeast(setup.ute.trackRear, 500) };
   const cv = {
@@ -623,12 +653,19 @@ export function compute(setup: Setup): Result {
   let cvItems = zeroCaravan();
   const itemEffects: Record<string, ItemEffect> = {};
   let ignored = 0;
+  // Sum of mass × height on each host (kg·mm), for the slope. The trailer's is above the tow ball.
+  const uteCog = uteCogHeight(setup.ute);
+  const trailerCog = towing ? caravanCogHeight(cv) : null;
+  let uteHeightMoment = 0;
+  let cvHeightMoment = 0;
 
   const effectOf = (host: Host, pos: Vec3, mass: number, effect: ItemEffect) => {
     if (host === 'ute') {
       effect.ute = addWheels(effect.ute, uteShare(mass, pos, ute));
+      uteHeightMoment += mass * pos.z;
     } else if (towing) {
       effect.caravan = addCaravan(effect.caravan, caravanShare(mass, pos, cv));
+      cvHeightMoment += mass * (pos.z - hitch.ballHeight);
     } else {
       return false;
     }
@@ -654,9 +691,17 @@ export function compute(setup: Setup): Result {
     });
   }
 
-  const unhitched = addWheels(uteBase.wheels, uteItems);
-  const unhitchedGross = unhitched.fl + unhitched.fr + unhitched.rl + unhitched.rr;
+  const level = addWheels(uteBase.wheels, uteItems);
+  const unhitchedGross = level.fl + level.fr + level.rl + level.rr;
+  const baseGross = uteBase.wheels.fl + uteBase.wheels.fr + uteBase.wheels.rl + uteBase.wheels.rr;
+  uteHeightMoment += baseGross * uteCog;
+  // Climbing moves weight from the front axle to the rear, descending the other way; each side takes half.
+  const uteSlopeShift = (uteHeightMoment * tan) / ute.wheelbase;
+  const shiftWheels = (rearGain: number): WheelLoads => ({ fl: -rearGain / 2, fr: -rearGain / 2, rl: rearGain / 2, rr: rearGain / 2 });
+  let slopeLoads = shiftWheels(uteSlopeShift);
+  const unhitched = addWheels(level, slopeLoads);
   const frontUnhitched = unhitched.fl + unhitched.fr;
+  let drawbar = 0;
 
   let hitchLoads = zeroWheels();
   let caravanResult: CaravanResult | null = null;
@@ -664,12 +709,21 @@ export function compute(setup: Setup): Result {
 
   if (towing && cvBase) {
     const own = ownWeightAt(cvBase.loads, cv);
-    const loads = addCaravan(own, cvItems);
-    const mass = loads.ball + loads.left + loads.right;
-    const B = loads.ball;
+    const levelLoads = addCaravan(own, cvItems);
+    const mass = levelLoads.ball + levelLoads.left + levelLoads.right;
     const L = ute.wheelbase;
     const d = hitch.ballOffset;
     const a = axleCentre(cv);
+    // The trailer pivots on the ball, so its slope shift is about the ball height. Its brakes are taken as off
+    // (steady speed, rolling resistance and drag ignored): the ball carries its weight along the slope, and that
+    // pull at ball height moves load onto the vehicle's rear axle when climbing and onto the front descending.
+    cvHeightMoment += (cvBase.loads.ball + cvBase.loads.left + cvBase.loads.right) * (trailerCog! - hitch.ballHeight);
+    const slopeToAxles = (cvHeightMoment * tan) / a;
+    const loads = { ball: levelLoads.ball - slopeToAxles, left: levelLoads.left + slopeToAxles / 2, right: levelLoads.right + slopeToAxles / 2 };
+    const B = loads.ball;
+    drawbar = mass * tan;
+    const drawbarShift = (drawbar * hitch.ballHeight) / L;
+    slopeLoads = addWheels(slopeLoads, shiftWheels(drawbarShift));
 
     if (cv.axles.length === 2) {
       const spacing = Math.abs(cv.axles[1] - cv.axles[0]);
@@ -717,8 +771,9 @@ export function compute(setup: Setup): Result {
         own === cvBase.loads
           ? null
           : { from: axleCentre({ ...cv, axles: cv.weighedAxles }), to: a, ballBefore: cvBase.loads.ball, ballAfter: own.ball },
+      slopeToAxles,
     };
-    const frontHitched = frontUnhitched + frontDelta;
+    const frontHitched = frontUnhitched + frontDelta - drawbarShift;
     hitchResult = {
       ball: B,
       wdhMoment: M,
@@ -736,7 +791,7 @@ export function compute(setup: Setup): Result {
     }
   }
 
-  const total = addWheels(unhitched, hitchLoads);
+  const total = addWheels(addWheels(level, slopeLoads), hitchLoads);
   const front = total.fl + total.fr;
   const rear = total.rl + total.rr;
   const gross = front + rear;
@@ -852,12 +907,26 @@ export function compute(setup: Setup): Result {
     maxCaravanBy = maxCaravan === gcmRoom ? 'GCM minus the vehicle as loaded' : maxCaravan === hitch.towbarRating ? 'tow bar rating' : 'towing capacity';
   }
 
+  if (grade !== 0) {
+    const dir = grade > 0 ? 'climbing' : 'descending';
+    issues.push({
+      level: 'info',
+      message:
+        `On a ${pct(Math.abs(grade))} slope (${Math.abs((Math.atan(tan) * 180) / Math.PI).toFixed(1)}°), ${dir}: loads are shown as they would be on the slope, ` +
+        `with the vehicle's own centre of mass taken ${mm(uteCog)} above the ground` +
+        (trailerCog != null ? `, the ${T}'s ${mm(trailerCog)}, and the ${T}'s brakes off so the tow ball holds its weight along the slope` : '') +
+        '. The ratings are for level ground.',
+    });
+  }
+
   return {
+    slope: { grade, degrees: (Math.atan(tan) * 180) / Math.PI, uteCog, trailerCog, drawbar },
     ute: {
       baseline: uteBase,
       items: uteItems,
       hitch: hitchLoads,
       unhitched,
+      slope: slopeLoads,
       total,
       front,
       rear,
@@ -888,6 +957,7 @@ export interface CapacityAt {
 
 /** How much more mass could go at a position before any rated limit is exceeded. */
 export function capacityAt(setup: Setup, host: Host, pos: Vec3, base: Result = compute(setup)): CapacityAt {
+  const opts: ComputeOptions = { grade: base.slope.grade };
   const probe: LoadItem = {
     id: '__probe__',
     name: 'probe',
@@ -900,7 +970,7 @@ export function capacityAt(setup: Setup, host: Host, pos: Vec3, base: Result = c
     enabled: true,
     measured: null,
   };
-  const withProbe = compute({ ...setup, items: [...setup.items, probe] });
+  const withProbe = compute({ ...setup, items: [...setup.items, probe] }, opts);
   let best = Infinity;
   let limitedBy: string | null = null;
   for (const c of base.checks) {

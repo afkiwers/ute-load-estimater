@@ -174,6 +174,19 @@ export function caravanGeometry(cv: CaravanSpec, hitch: HitchSpec): CaravanGeome
   };
 }
 
+/**
+ * Assumed height of the vehicle's centre of mass as weighed (mm): about 40% of its overall height, typical for a
+ * dual cab ute or a large SUV. Items carry their own height on top of this.
+ */
+export function uteCogHeight(ute: Pick<UteSpec, 'overallHeight'>): number {
+  return Math.round((ute.overallHeight * 0.4) / 10) * 10;
+}
+
+/** Assumed height of the trailer's own centre of mass (mm): the floor plus a fifth of the body above it. */
+export function caravanCogHeight(cv: Pick<CaravanSpec, 'floorHeight' | 'bodyHeight'>): number {
+  return Math.round((cv.floorHeight + cv.bodyHeight * 0.2) / 10) * 10;
+}
+
 /** Distance from the front axle to the coupling, which is where the caravan frame starts. */
 export function caravanOffset(setup: Pick<Setup, 'ute' | 'hitch'>): number {
   return setup.ute.wheelbase + setup.hitch.ballOffset;

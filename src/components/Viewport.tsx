@@ -64,6 +64,39 @@ const VIEWS: { id: ViewPreset; label: string }[] = [
   { id: 'rear', label: 'Rear' },
 ];
 
+/** Steepest gradient on the slider, %. Steep driveways and boat ramps reach about 15–20%, 4WD tracks 30%. */
+const SLOPE_RANGE = 30;
+
+function SlopeControl() {
+  const slope = useUi((s) => s.slope);
+  const setSlope = useUi((s) => s.setSlope);
+  const degrees = (Math.atan(slope / 100) * 180) / Math.PI;
+  const text = slope === 0 ? 'Level' : `${slope > 0 ? '▲' : '▼'} ${Math.abs(slope)}%`;
+  return (
+    <div className={`grp slope${slope !== 0 ? ' on' : ''}`} title="Stand the vehicle on a slope to see how climbing (+) or descending (−) moves load between the axles">
+      <span className="slope-label">Slope</span>
+      <input
+        type="range"
+        min={-SLOPE_RANGE}
+        max={SLOPE_RANGE}
+        step={1}
+        value={slope}
+        aria-label="Road gradient in percent, positive climbing"
+        aria-valuetext={slope === 0 ? 'level' : `${Math.abs(slope)}% ${slope > 0 ? 'climbing' : 'descending'}`}
+        onChange={(e) => setSlope(Number(e.target.value))}
+      />
+      <button
+        className={slope !== 0 ? 'on' : ''}
+        onClick={() => setSlope(0)}
+        disabled={slope === 0}
+        title={slope === 0 ? 'On level ground' : `${Math.abs(slope)}% (${Math.abs(degrees).toFixed(1)}°) ${slope > 0 ? 'climbing' : 'descending'}. Click for level ground.`}
+      >
+        {text}
+      </button>
+    </div>
+  );
+}
+
 function ViewToolbar() {
   const view = useUi((s) => s.view.preset);
   const xray = useUi((s) => s.xray);
@@ -97,6 +130,7 @@ function ViewToolbar() {
           X-ray
         </button>
       </div>
+      <SlopeControl />
     </div>
   );
 }

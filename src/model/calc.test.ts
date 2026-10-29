@@ -611,3 +611,70 @@ describe('inputs left at 0 or below', () => {
     expect(tyre.detail).toBe('Load index 121 = 1,450 kg per tyre.');
   });
 });
+
+describe('slope', () => {
+  const ute = (r: ReturnType<typeof compute>) => r.ute;
+
+  it('is the level result at 0%', () => {
+    const s = newSetup('slope');
+    const level = compute(s);
+    const flat = compute(s, { grade: 0 });
+    expect(flat.ute.total).toEqual(level.ute.total);
+    expect(flat.checks).toEqual(level.checks);
+  });
+
+  it('moves weight onto the rear axle climbing and onto the front descending', () => {
+    const s = bareSetup();
+    s.items = [item({ mass: 200, pos: { x: 2000, y: 0, z: 1500 } })];
+    const level = compute(s);
+    const up = compute(s, { grade: 10 });
+    const down = compute(s, { grade: -10 });
+    // Every mass's height times the gradient, over the wheelbase.
+    const moment = 2500 * up.slope.uteCog + 200 * 1500;
+    const shift = (moment * 0.1) / s.ute.wheelbase;
+    expect(ute(up).rear - ute(level).rear).toBeCloseTo(shift, 6);
+    expect(ute(up).front - ute(level).front).toBeCloseTo(-shift, 6);
+    expect(ute(down).rear - ute(level).rear).toBeCloseTo(-shift, 6);
+    expect(ute(up).gross).toBeCloseTo(ute(level).gross, 6);
+    expect(sum(ute(up).slope)).toBeCloseTo(0, 6);
+  });
+
+  it('a higher load shifts more', () => {
+    const s = bareSetup();
+    s.items = [item({ mass: 100, pos: { x: 1000, y: 0, z: 2200 } })];
+    const roof = compute(s, { grade: 15 }).ute.rear;
+    s.items[0].pos.z = 500;
+    expect(roof).toBeGreaterThan(compute(s, { grade: 15 }).ute.rear);
+  });
+
+  it('a climbing trailer leans off the ball and pulls the vehicle down at the back', () => {
+    const s = newSetup('tow');
+    s.towing = true;
+    s.items = [];
+    const level = compute(s);
+    const up = compute(s, { grade: 15 });
+    const c0 = level.caravan!;
+    const c1 = up.caravan!;
+    // Its centre of mass is above the ball, so climbing moves weight back onto its axles.
+    expect(c1.loads.ball).toBeLessThan(c0.loads.ball);
+    expect(c1.axle).toBeGreaterThan(c0.axle);
+    expect(c1.mass).toBeCloseTo(c0.mass, 6);
+    expect(up.slope.drawbar).toBeCloseTo(c0.mass * 0.15, 6);
+    // The pull on the ball at ball height adds to the vehicle's own lean onto the rear axle.
+    const own = (up.ute.unhitchedGross * up.slope.uteCog * 0.15) / s.ute.wheelbase;
+    const pull = (c0.mass * 0.15 * s.hitch.ballHeight) / s.ute.wheelbase;
+    expect(sum({ fl: 0, fr: 0, rl: up.ute.slope.rl, rr: up.ute.slope.rr })).toBeCloseTo(own + pull, 6);
+    // Masses don't change with the slope.
+    expect(up.checks.find((c) => c.id === 'gcm')!.value).toBeCloseTo(level.checks.find((c) => c.id === 'gcm')!.value, 6);
+    expect(up.issues.some((i) => i.message.includes('15% slope'))).toBe(true);
+  });
+
+  it('works out the room left at a spot on the same slope', () => {
+    const s = bareSetup();
+    s.ute.limits.rearAxle = 2000;
+    const pos = { x: 3000, y: 0, z: 900 };
+    const level = capacityAt(s, 'ute', pos);
+    const up = capacityAt(s, 'ute', pos, compute(s, { grade: 20 }));
+    expect(up.kg).toBeLessThan(level.kg);
+  });
+});
