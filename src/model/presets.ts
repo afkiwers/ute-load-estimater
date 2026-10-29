@@ -153,7 +153,7 @@ export const ITEM_TEMPLATES: ItemTemplate[] = [
     t('cvSpare', 'Caravan outside', 'Spare wheel (rear)', 26, [240, 730, 730], 'cvRearBumper', '#222', { shape: 'cylinder' }),
   ].map((tpl) => ({ ...tpl, kinds: ['caravan'] as TrailerKind[] })),
   ...[
-    t('boatHull', 'Boat', 'Boat hull, 5.3 m aluminium', 550, [5300, 2100, 900], 'cvBoat', '#eef1f4', { shape: 'boat' }),
+    t('boatHull', 'Boat', 'Boat', 1900, [6200, 2500, 1000], 'cvBoat', '#33373d', { shape: 'boat' }),
     t('outboard', 'Boat', 'Outboard motor 115 hp', 180, [600, 500, 1250], 'cvTransom', '#2b2f35', { shape: 'outboard' }),
     t('boatFuel', 'Boat', 'Fuel tank 80 L (full)', 68, [700, 450, 300], 'cvBoatInside', '#c63b32'),
     t('fishing', 'Boat', 'Fishing and safety gear', 35, [700, 500, 350], 'cvBoatInside', '#5d7a8c'),
@@ -239,7 +239,7 @@ export function newSetup(name = 'My setup'): Setup {
 /**
  * Switches the towed vehicle to another trailer type: loads that type's typical
  * values (as placeholders), clears the trailer readings, removes items that were
- * on the old trailer and, for a boat, puts the boat and motor on.
+ * on the old trailer and, for a boat, puts the boat and its fuel on (its engine is inboard, in the hull's mass).
  */
 export function applyTrailerKind(setup: Setup, kind: TrailerKind) {
   setup.towing = true;
@@ -248,7 +248,7 @@ export function applyTrailerKind(setup: Setup, kind: TrailerKind) {
   setup.items = setup.items.filter((i) => i.host !== 'caravan' && i.measured?.host !== 'caravan');
   setup.placeholders = [...setup.placeholders.filter((p) => !p.startsWith('caravan.')), ...trailerPlaceholders(setup.caravan)];
   if (kind === 'boat') {
-    for (const id of ['boatHull', 'outboard', 'boatFuel']) {
+    for (const id of ['boatHull', 'boatFuel']) {
       setup.items.push(itemFromTemplate(ITEM_TEMPLATES.find((tpl) => tpl.id === id)!, setup));
     }
   }

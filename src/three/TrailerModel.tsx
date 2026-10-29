@@ -38,6 +38,18 @@ function useShellMaterial(xray: boolean, params: THREE.MeshPhysicalMaterialParam
 /** Outside of a closed body: a drop target unless in x-ray, when drops go through it to the floor inside. */
 const shellProps = (xray: boolean) => ({ castShadow: !xray, receiveShadow: !xray, userData: surfaceData(xray ? null : 'cvBody', 'caravan') });
 
+/**
+ * A boat trailer's frame: one tongue from the coupling past the winch post, splitting in a V into two side rails, with
+ * crossmembers that carry the bunk brackets.
+ */
+function boatFrame(cv: CaravanSpec, c: CaravanGeometry) {
+  const railY = 0.22 * cv.bodyWidth;
+  const split = c.bodyStart + 250;
+  const front = split + 650;
+  const rear = c.bodyEnd - 60;
+  return { railY, bunkY: 0.28 * cv.bodyWidth, split, front, rear, crossXs: [front, (front + rear) / 2, rear] };
+}
+
 /** Checker plate between the A-frame rails, tapering with them towards the coupling. */
 function DrawbarPlate({ c, m, offset, railY }: { c: CaravanGeometry; m: Materials; offset: number; railY: number }) {
   const geo = useMemo(() => {
@@ -57,22 +69,25 @@ function DrawbarPlate({ c, m, offset, railY }: { c: CaravanGeometry; m: Material
   );
 }
 
-/** Drawbar, jockey wheel, running gear and (for small trailers) mudguards, shared by every trailer type. */
+/**
+ * Drawbar, running gear and (for small trailers) mudguards, shared by every trailer type. No jockey wheel: hitched, it is wound up
+ * and carries nothing, and drawn on the ground it looked as if it took some of the ball weight.
+ */
 function Chassis({ cv, c, m, offset, accent, hitch }: BodyProps & { hitch: HitchSpec }) {
   const v = { host: 'caravan' as const, offset };
   const half = cv.bodyWidth / 2;
   const central = cv.kind === 'boat';
-  const railY = central ? 0.22 * cv.bodyWidth : Math.min(half - 150, cv.track / 2 - 250);
+  const boat = boatFrame(cv, c);
+  const railY = central ? boat.railY : Math.min(half - 150, cv.track / 2 - 250);
   const railZ = c.drawbarZ;
   const rimR = ((rimDiameter(cv.tyre.size) ?? 15) * 25.4) / 2;
   // Wheels outside the body need guards; a caravan's sit under its floor.
   const guards = cv.track / 2 + c.tyreW / 2 > half - 40;
 
-  // A-frame rails run from the coupling out to the chassis rails at the body front.
-  const aFrame = (central ? [0] : [-1, 1]).map((side) => {
-    const reach = central ? c.bodyStart + 900 : c.bodyStart;
+  // A-frame rails run from the coupling out to the chassis rails at the body front. A boat trailer has a single tongue.
+  const aFrame = (central ? [] : [-1, 1]).map((side) => {
     const [x0, , z0] = toWorld('caravan', { x: 150, y: 0, z: railZ }, offset);
-    const [x1, , z1] = toWorld('caravan', { x: reach, y: side * railY, z: railZ }, offset);
+    const [x1, , z1] = toWorld('caravan', { x: c.bodyStart, y: side * railY, z: railZ }, offset);
     const dx = x1 - x0;
     const dz = z1 - z0;
     return {
@@ -88,16 +103,18 @@ function Chassis({ cv, c, m, offset, accent, hitch }: BodyProps & { hitch: Hitch
       <RBox {...v} b={{ x0: -40, x1: 260, y0: -60, y1: 60, z0: c.couplingZ - 10, z1: c.couplingZ + 70 }} r={20} material={m.brushed} />
       {aFrame.map((a) => (
         <mesh key={a.side} position={a.position} rotation={[0, a.rotY, 0]} castShadow material={m.chassis}>
-          <boxGeometry args={[a.length, 0.1, central ? 0.1 : 0.05]} />
+          <boxGeometry args={[a.length, 0.1, 0.05]} />
         </mesh>
       ))}
       {!central && <DrawbarPlate c={c} m={m} offset={offset} railY={railY} />}
-      <mesh position={toWorld('caravan', { x: 520, y: 0, z: (c.drawbarZ + 120) / 2 }, offset)} material={m.chassis}>
-        <cylinderGeometry args={[0.03, 0.03, (c.drawbarZ - 120) / 1000, 12]} />
-      </mesh>
-      <mesh position={toWorld('caravan', { x: 520, y: 0, z: 80 }, offset)} rotation={[Math.PI / 2, 0, 0]} material={m.plastic}>
-        <cylinderGeometry args={[0.08, 0.08, 0.06, 20]} />
-      </mesh>
+      {central && (
+        <>
+          <RBox {...v} b={{ x0: 150, x1: boat.front + 50, y0: -50, y1: 50, z0: railZ - 50, z1: railZ + 50 }} r={6} material={m.chassis} />
+          {[-1, 1].map((side) => (
+            <Strut key={side} host="caravan" offset={offset} a={{ x: boat.split, y: 0, z: railZ }} b={{ x: boat.front, y: side * railY, z: railZ }} w={60} d={60} material={m.chassis} />
+          ))}
+        </>
+      )}
 
       {hitch.wdh.enabled &&
         [-1, 1].map((side) => (
@@ -108,7 +125,7 @@ function Chassis({ cv, c, m, offset, accent, hitch }: BodyProps & { hitch: Hitch
         <RBox
           key={side}
           {...v}
-          b={{ x0: central ? c.bodyStart + 600 : c.bodyStart, x1: c.bodyEnd, y0: side * railY - 25, y1: side * railY + 25, z0: railZ - 50, z1: railZ + 50 }}
+          b={{ x0: central ? boat.front - 30 : c.bodyStart, x1: c.bodyEnd, y0: side * railY - 25, y1: side * railY + 25, z0: railZ - 50, z1: railZ + 50 }}
           r={6}
           material={m.chassis}
         />
@@ -116,6 +133,22 @@ function Chassis({ cv, c, m, offset, accent, hitch }: BodyProps & { hitch: Hitch
       {c.axles.map((x) => (
         <Strut key={x} host="caravan" offset={offset} a={{ x, y: -cv.track / 2 + 60, z: c.wheelR }} b={{ x, y: cv.track / 2 - 60, z: c.wheelR }} w={60} d={60} material={m.chassis} />
       ))}
+      {/* Leaf springs on the axle, hung from the rails front and back. */}
+      {c.axles.map((x) =>
+        [-1, 1].map((side) => {
+          const y = side * railY;
+          const top = c.wheelR + 80;
+          return (
+            <group key={`spring${x}${side}`}>
+              <RBox {...v} b={{ x0: x - 330, x1: x + 330, y0: y - 30, y1: y + 30, z0: c.wheelR + 35, z1: top }} r={10} material={m.chassis} />
+              {railZ - 50 > top &&
+                [x - 300, x + 300].map((hx) => (
+                  <Strut key={hx} host="caravan" offset={offset} a={{ x: hx, y, z: top - 10 }} b={{ x: hx, y, z: railZ - 40 }} w={40} d={50} material={m.chassis} />
+                ))}
+            </group>
+          );
+        }),
+      )}
       {c.axles.map((x) =>
         [-1, 1].map((side) => (
           <group key={`${x}${side}`}>
@@ -252,23 +285,25 @@ function OpenBody({ cv, c, m, offset, xray }: BodyProps) {
 
 function BoatTrailerBody({ cv, c, m, offset }: BodyProps) {
   const v = { host: 'caravan' as const, offset };
-  const bunkY = 0.28 * cv.bodyWidth;
+  const frame = boatFrame(cv, c);
+  const bunkY = frame.bunkY;
   const fz = c.floorZ;
   const railZ = c.drawbarZ;
   const lightHalf = cv.track / 2 + c.tyreW / 2 + 40;
   return (
     <group>
-      {/* Carpeted bunks (drop target) on posts, crossmembers */}
-      {[-1, 1].map((side) => (
-        <group key={side}>
-          <RBox {...v} b={{ x0: c.bodyStart + 600, x1: c.bodyEnd - 100, ...yy(side, bunkY - 60, bunkY + 60), z0: fz - 50, z1: fz }} r={14} material={bunkMat} surface="cvFloor" />
-          {[c.bodyStart + 1200, (c.bodyStart + c.bodyEnd) / 2 + 300, c.bodyEnd - 400].map((x) => (
-            <Strut key={x} host="caravan" offset={offset} a={{ x, y: side * 0.22 * cv.bodyWidth, z: railZ }} b={{ x, y: side * bunkY, z: fz - 50 }} w={40} d={40} material={m.chassis} />
+      {/* Crossmembers across the rails, reaching out under the bunks, with a bracket up to each bunk. */}
+      {frame.crossXs.map((x) => (
+        <group key={x}>
+          <RBox {...v} b={{ x0: x - 35, x1: x + 35, y0: -(bunkY + 70), y1: bunkY + 70, z0: railZ - 45, z1: railZ + 45 }} r={6} material={m.chassis} />
+          {[-1, 1].map((side) => (
+            <RBox key={side} {...v} b={{ x0: x - 45, x1: x + 45, ...yy(side, bunkY - 40, bunkY + 40), z0: railZ + 40, z1: Math.max(railZ + 60, fz - 45) }} r={6} material={m.chassis} />
           ))}
         </group>
       ))}
-      {[c.bodyStart + 1200, (c.bodyStart + c.bodyEnd) / 2 + 300, c.bodyEnd - 400].map((x) => (
-        <RBox key={x} {...v} b={{ x0: x - 30, x1: x + 30, y0: -0.25 * cv.bodyWidth, y1: 0.25 * cv.bodyWidth, z0: railZ - 40, z1: railZ + 40 }} r={6} material={m.chassis} />
+      {/* Carpeted bunks (drop target) on the brackets */}
+      {[-1, 1].map((side) => (
+        <RBox key={side} {...v} b={{ x0: frame.front - 150, x1: c.bodyEnd - 40, ...yy(side, bunkY - 60, bunkY + 60), z0: fz - 50, z1: fz }} r={14} material={bunkMat} surface="cvFloor" />
       ))}
       {/* Winch post with winch and bow stop */}
       <RBox {...v} b={{ x0: c.bodyStart - 40, x1: c.bodyStart + 40, y0: -40, y1: 40, z0: railZ, z1: fz + 480 }} r={8} material={m.chassis} />
