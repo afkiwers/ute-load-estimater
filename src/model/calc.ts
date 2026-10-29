@@ -912,10 +912,10 @@ export function compute(setup: Setup, opts: ComputeOptions = {}): Result {
     issues.push({
       level: 'info',
       message:
-        `On a ${pct(Math.abs(grade))} slope (${Math.abs((Math.atan(tan) * 180) / Math.PI).toFixed(1)}°), ${dir}: loads are shown as they would be on the slope, ` +
-        `with the vehicle's own centre of mass taken ${mm(uteCog)} above the ground` +
+        `Illustrative only. On a ${pct(Math.abs(grade))} slope (${Math.abs((Math.atan(tan) * 180) / Math.PI).toFixed(1)}°), ${dir}: loads are shown as they would be on the slope, ` +
+        `but the centre of mass heights are not known, only assumed: the vehicle's own ${mm(uteCog)} above the ground` +
         (trailerCog != null ? `, the ${T}'s ${mm(trailerCog)}, and the ${T}'s brakes off so the tow ball holds its weight along the slope` : '') +
-        '. The ratings are for level ground.',
+        '. The real loads can differ noticeably. The ratings are for level ground.',
     });
   }
 

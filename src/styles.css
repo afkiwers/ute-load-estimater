@@ -1197,6 +1197,42 @@ table.loads tr.total td {
   background: transparent;
 }
 
+.slope-banner {
+  position: absolute;
+  top: 46px;
+  left: 10px;
+  right: 10px;
+  max-width: 560px;
+  z-index: 20;
+  padding: 7px 11px;
+  border-radius: 7px;
+  border-left: 4px solid var(--near);
+  background: var(--near-soft);
+  color: var(--text);
+  font-size: 12.5px;
+  line-height: 1.4;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.08);
+  pointer-events: none;
+}
+
+.slope-notice p {
+  margin: 0 0 10px;
+  line-height: 1.5;
+}
+
+.slope-notice ul {
+  margin: 0 0 10px;
+  padding-left: 20px;
+  line-height: 1.6;
+}
+
+.slope-notice-lead {
+  padding: 10px 12px;
+  border-radius: 7px;
+  border-left: 4px solid var(--near);
+  background: var(--near-soft);
+}
+
 .view-hint {
   position: absolute;
   bottom: 10px;
