@@ -39,6 +39,8 @@ interface UiState {
   toast: { text: string; nonce: number } | null;
   snapshot: string | null;
   paletteOpen: boolean;
+  /** Road gradient in % the combination stands on: + climbing, − descending. A what-if, not saved with the setup. */
+  slope: number;
 
   setTab: (t: Tab) => void;
   select: (id: string | null) => void;
@@ -50,6 +52,7 @@ interface UiState {
   showToast: (text: string) => void;
   setSnapshot: (s: string | null) => void;
   setPaletteOpen: (open: boolean) => void;
+  setSlope: (grade: number) => void;
 }
 
 export const useUi = create<UiState>()((set) => ({
@@ -63,6 +66,7 @@ export const useUi = create<UiState>()((set) => ({
   toast: null,
   snapshot: null,
   paletteOpen: paletteDefault(),
+  slope: 0,
 
   setTab: (tab) => set({ tab }),
   select: (selectedId) => set({ selectedId }),
@@ -83,6 +87,7 @@ export const useUi = create<UiState>()((set) => ({
     }
     set({ paletteOpen });
   },
+  setSlope: (slope) => set({ slope }),
 }));
 
 /** Bridges the three.js scene to DOM handlers (palette drops, report snapshots). */
@@ -98,6 +103,9 @@ export interface SceneHit {
   normal: Vec3;
   surface: string;
 }
+
+/** Name of the scene group whose local space is the level scene, whatever slope it stands on. */
+export const LEVEL_GROUP = 'level-scene';
 
 export const sceneBridge: { current: SceneBridge | null } = { current: null };
 

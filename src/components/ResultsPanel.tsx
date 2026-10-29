@@ -120,17 +120,26 @@ function LoadTable() {
   const r = useResult();
   const u = r.ute;
   const towing = Boolean(r.caravan);
-  const rows: { label: string; base: number; items: number; hitch: number; total: number }[] = WHEEL_IDS.map((w) => ({
+  const sloped = r.slope.grade !== 0;
+  const delta = (x: number) => signedKg(x).replace(' kg', '');
+  const rows: { label: string; base: number; items: number; slope: number; hitch: number; total: number }[] = WHEEL_IDS.map((w) => ({
     label: w.toUpperCase(),
     base: u.baseline.wheels[w],
     items: u.items[w],
+    slope: u.slope[w],
     hitch: u.hitch[w],
     total: u.total[w],
   }));
   const sumRows = (ids: number[]) =>
     ids.reduce(
-      (acc, i) => ({ base: acc.base + rows[i].base, items: acc.items + rows[i].items, hitch: acc.hitch + rows[i].hitch, total: acc.total + rows[i].total }),
-      { base: 0, items: 0, hitch: 0, total: 0 },
+      (acc, i) => ({
+        base: acc.base + rows[i].base,
+        items: acc.items + rows[i].items,
+        slope: acc.slope + rows[i].slope,
+        hitch: acc.hitch + rows[i].hitch,
+        total: acc.total + rows[i].total,
+      }),
+      { base: 0, items: 0, slope: 0, hitch: 0, total: 0 },
     );
   const front = sumRows([0, 1]);
   const rear = sumRows([2, 3]);
@@ -143,6 +152,7 @@ function LoadTable() {
             <th>Vehicle (kg)</th>
             <th>Baseline</th>
             <th>Items</th>
+            {sloped && <th>Slope</th>}
             {towing && <th>Hitch</th>}
             <th>Total</th>
           </tr>
@@ -153,6 +163,7 @@ function LoadTable() {
               <td>{row.label}</td>
               <td>{num(row.base)}</td>
               <td>{signedKg(row.items).replace(' kg', '')}</td>
+              {sloped && <td>{delta(row.slope)}</td>}
               {towing && <td>{signedKg(row.hitch).replace(' kg', '')}</td>}
               <td>{num(row.total)}</td>
             </tr>
@@ -168,6 +179,7 @@ function LoadTable() {
                 <td>{label as string}</td>
                 <td>{num(s.base)}</td>
                 <td>{signedKg(s.items).replace(' kg', '')}</td>
+                {sloped && <td>{delta(s.slope)}</td>}
                 {towing && <td>{signedKg(s.hitch).replace(' kg', '')}</td>}
                 <td>{num(s.total)}</td>
               </tr>
@@ -182,6 +194,7 @@ function LoadTable() {
               <th>{trailerName(setup.caravan.kind, true)} (kg)</th>
               <th>Baseline</th>
               <th>Items</th>
+              {sloped && <th>Slope</th>}
               <th>WDH</th>
               <th>Total</th>
             </tr>
@@ -191,6 +204,7 @@ function LoadTable() {
               <td>Ball</td>
               <td>{num(r.caravan.baseline.loads.ball)}</td>
               <td>{signedKg(r.caravan.items.ball).replace(' kg', '')}</td>
+              {sloped && <td>{delta(-r.caravan.slopeToAxles)}</td>}
               <td>–</td>
               <td>{num(r.caravan.loads.ball)}</td>
             </tr>
@@ -198,6 +212,7 @@ function LoadTable() {
               <td>Left side</td>
               <td>{num(r.caravan.baseline.loads.left)}</td>
               <td>{signedKg(r.caravan.items.left).replace(' kg', '')}</td>
+              {sloped && <td>{delta(r.caravan.slopeToAxles / 2)}</td>}
               <td>{signedKg(r.caravan.axleLeft - r.caravan.loads.left).replace(' kg', '')}</td>
               <td>{num(r.caravan.axleLeft)}</td>
             </tr>
@@ -205,6 +220,7 @@ function LoadTable() {
               <td>Right side</td>
               <td>{num(r.caravan.baseline.loads.right)}</td>
               <td>{signedKg(r.caravan.items.right).replace(' kg', '')}</td>
+              {sloped && <td>{delta(r.caravan.slopeToAxles / 2)}</td>}
               <td>{signedKg(r.caravan.axleRight - r.caravan.loads.right).replace(' kg', '')}</td>
               <td>{num(r.caravan.axleRight)}</td>
             </tr>
@@ -216,6 +232,7 @@ function LoadTable() {
                     <td>{i === 0 ? 'Front axle' : 'Rear axle'}</td>
                     <td>{num(r.caravan!.baseline.axles[i])}</td>
                     <td>{share(r.caravan!.items.left + r.caravan!.items.right)}</td>
+                    {sloped && <td>{share(r.caravan!.slopeToAxles)}</td>}
                     <td>{share(r.hitch!.wdhToCaravan)}</td>
                     <td>{num(load)}</td>
                   </tr>
@@ -225,6 +242,7 @@ function LoadTable() {
               <td>{trailerName(setup.caravan.kind, true)} mass</td>
               <td>{num(r.caravan.baseline.loads.ball + r.caravan.baseline.loads.left + r.caravan.baseline.loads.right)}</td>
               <td>{signedKg(r.caravan.items.ball + r.caravan.items.left + r.caravan.items.right).replace(' kg', '')}</td>
+              {sloped && <td>–</td>}
               <td>–</td>
               <td>{num(r.caravan.mass)}</td>
             </tr>
@@ -235,6 +253,8 @@ function LoadTable() {
         {setup.towing
           ? 'Hitch: ball weight levered about the rear axle (it lifts the front), plus any WDH transfer.'
           : 'Items: what-if items minus items already included in the readings, at their weighed positions.'}
+        {sloped &&
+          ` Slope: weight leaning toward the lower axle on the ${pct(Math.abs(r.slope.grade))} ${r.slope.grade > 0 ? 'climb' : 'descent'}${towing ? `, including the ${trailerName(setup.caravan.kind)} ${r.slope.grade > 0 ? 'pulling back' : 'pushing'} on the ball` : ''}.`}
       </p>
     </>
   );

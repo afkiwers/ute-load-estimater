@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import type { Host } from '../model/types';
 import { caravanOffset, dirFromWorld, fromWorld, placeFromHit } from '../model/geometry';
 import { activeSetup, useStore } from '../state/store';
-import { sceneBridge, useUi, type SceneHit } from '../state/ui';
+import { LEVEL_GROUP, sceneBridge, useUi, type SceneHit } from '../state/ui';
 
 /** Exposes ray picking to DOM drop handlers and moves items while they are dragged in the scene. */
 export function Interaction() {
@@ -27,11 +27,15 @@ export function Interaction() {
       const hit = raycaster.intersectObjects(targets, false).find((h) => h.face);
       if (!hit || !hit.face) return null;
       const host = hit.object.userData.host as Host;
-      const normal = hit.face.normal.clone().transformDirection(hit.object.matrixWorld);
+      // Back into the level scene's space: the model may stand on a slope.
+      const level = scene.getObjectByName(LEVEL_GROUP);
+      const toLevel = level ? level.matrixWorld.clone().invert() : new THREE.Matrix4();
+      const normal = hit.face.normal.clone().transformDirection(hit.object.matrixWorld).transformDirection(toLevel);
+      const point = hit.point.clone().applyMatrix4(toLevel);
       const offset = caravanOffset(activeSetup());
       return {
         host,
-        point: fromWorld(host, hit.point, offset),
+        point: fromWorld(host, point, offset),
         normal: dirFromWorld(normal),
         surface: hit.object.userData.surface as string,
       };
