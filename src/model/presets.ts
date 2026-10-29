@@ -153,7 +153,7 @@ export const ITEM_TEMPLATES: ItemTemplate[] = [
     t('cvSpare', 'Caravan outside', 'Spare wheel (rear)', 26, [240, 730, 730], 'cvRearBumper', '#222', { shape: 'cylinder' }),
   ].map((tpl) => ({ ...tpl, kinds: ['caravan'] as TrailerKind[] })),
   ...[
-    t('boatHull', 'Boat', 'Boat hull, 5.3 m aluminium', 550, [5300, 2100, 900], 'cvBoat', '#eef1f4', { shape: 'boat' }),
+    t('boatHull', 'Boat', 'Boat hull, 5.3 m aluminium', 550, [5300, 2100, 900], 'cvBoat', '#33373d', { shape: 'boat' }),
     t('outboard', 'Boat', 'Outboard motor 115 hp', 180, [600, 500, 1250], 'cvTransom', '#2b2f35', { shape: 'outboard' }),
     t('boatFuel', 'Boat', 'Fuel tank 80 L (full)', 68, [700, 450, 300], 'cvBoatInside', '#c63b32'),
     t('fishing', 'Boat', 'Fishing and safety gear', 35, [700, 500, 350], 'cvBoatInside', '#5d7a8c'),

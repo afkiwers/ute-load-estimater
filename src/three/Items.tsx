@@ -30,74 +30,214 @@ interface ShapeProps {
   onPointerOut?: (e: ThreeEvent<PointerEvent>) => void;
 }
 
-/** Top view of a hull, bow at +x, centred on the origin (metres). */
-function drawHull(p: THREE.Path, l: number, w: number) {
-  const bow = l / 2;
-  const stern = -l / 2;
-  const beam = bow - 0.38 * l;
-  p.moveTo(stern, -w * 0.46);
-  p.lineTo(beam, -w / 2);
-  p.quadraticCurveTo(bow - 0.04 * l, -w * 0.42, bow, 0);
-  p.quadraticCurveTo(bow - 0.04 * l, w * 0.42, beam, w / 2);
-  p.lineTo(stern, w * 0.46);
-  p.lineTo(stern, -w * 0.46);
+type V3 = [number, number, number];
+
+/** Cross-section of the hull at a share s of its length from the transom (0) to the bow (1), in metres around the box centre. */
+interface Section {
+  x: number;
+  /** Right side from the keel up to the sheer, as [height, half-width]; the left side mirrors it. */
+  side: [number, number][];
+  /** Index in `side` where the accent stripe starts; it runs to the next point. */
+  stripe: number;
+  sheerY: number;
+  halfBeam: number;
 }
 
-/** Lays an outline extruded along +z flat, extruding upwards instead. */
-function standUp(g: THREE.BufferGeometry) {
-  g.rotateX(-Math.PI / 2);
+function hullSection(s: number, l: number, w: number, h: number): Section {
+  const x = -l / 2 + s * l;
+  // Full beam aft, a fine pointed bow.
+  const halfBeam = s <= 0.5 ? (w / 2) * (0.93 + 0.07 * (s / 0.5)) : (w / 2) * (1 - Math.pow((s - 0.5) / 0.5, 2.2));
+  const sheerY = h / 2 - 0.1 * h * (1 - s);
+  const bow = Math.max(0, (s - 0.55) / 0.45);
+  const keelY = -h / 2 + 0.6 * h * bow * bow;
+  // Deep V up to a hard chine, then a knuckle (the widest line) with the accent stripe just below it.
+  const chineY = keelY + 0.24 * h * (1 - 0.4 * bow);
+  const knuckleY = chineY + (sheerY - chineY) * 0.5;
+  const stripeY = knuckleY - Math.min(0.07, 0.3 * (knuckleY - chineY));
+  const t = (stripeY - chineY) / (knuckleY - chineY || 1);
+  const chineZ = 0.8 * halfBeam;
+  return {
+    x,
+    side: [
+      [keelY, 0],
+      [chineY, chineZ],
+      [stripeY, chineZ + (halfBeam - chineZ) * t],
+      [knuckleY, halfBeam],
+      [sheerY, 0.98 * halfBeam],
+    ],
+    stripe: 2,
+    sheerY,
+    halfBeam,
+  };
+}
+
+/** Joins point lists at successive stations with quads; each list runs so the faces' fronts point outwards. */
+function skin(rows: V3[][], out: number[], from = 0, to = Infinity) {
+  for (let j = 0; j + 1 < rows.length; j++) {
+    const a = rows[j];
+    const b = rows[j + 1];
+    for (let i = from; i + 1 < a.length && i < to; i++) out.push(...a[i], ...b[i], ...b[i + 1], ...a[i], ...b[i + 1], ...a[i + 1]);
+  }
+}
+
+function geometry(pos: number[]) {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.computeVertexNormals();
   return g;
 }
 
-/** Open boat: solid V-shaped hull up to the cockpit floor, gunwales above it, a console in the middle. */
+/** Stations along the hull, closer together where the cockpit starts and ends so its walls stay upright. */
+const COCKPIT: [number, number] = [0.08, 0.84];
+const STATIONS = [0, 0.04, COCKPIT[0], COCKPIT[0] + 0.004, 0.2, 0.32, 0.44, 0.55, 0.64, 0.72, 0.78, COCKPIT[1], COCKPIT[1] + 0.004, 0.88, 0.92, 0.95, 0.975, 0.99, 1];
+
+/** Hull, deck with a recessed cockpit, and transom, as flat-shaded faces (metres, bow at +x, centred on the item box). */
+function hullGeometry(l: number, w: number, h: number) {
+  const floorY = -h / 2 + h * BOAT_FLOOR;
+  const sections = STATIONS.map((s) => ({ s, ...hullSection(s, l, w, h) }));
+  const right = sections.map((c) => c.side.map(([y, z]) => [c.x, y, z] as V3));
+  // The left side runs the other way round so its faces point out too.
+  const left = sections.map((c) => c.side.map(([y, z]) => [c.x, y, -z] as V3).reverse());
+  const hull: number[] = [];
+  const stripe: number[] = [];
+  const n = sections[0].side.length;
+  const k = sections[0].stripe;
+  skin(right, hull, 0, k);
+  skin(right, stripe, k, k + 1);
+  skin(right, hull, k + 1);
+  skin(left, hull, 0, n - 2 - k);
+  skin(left, stripe, n - 2 - k, n - 1 - k);
+  skin(left, hull, n - 1 - k);
+
+  // Deck from the right sheer to the left: gunwale, down into the cockpit where there is one, across, and up again.
+  const deck: number[] = [];
+  const deckRows = sections.map((c) => {
+    const edge = 0.98 * c.halfBeam;
+    const inner = Math.max(0, edge - Math.min(0.17, 0.3 * edge));
+    const open = c.s > COCKPIT[0] && c.s <= COCKPIT[1];
+    const fy = open ? floorY : c.sheerY;
+    return [
+      [c.x, c.sheerY, edge],
+      [c.x, c.sheerY, inner],
+      [c.x, fy, inner],
+      [c.x, fy, -inner],
+      [c.x, c.sheerY, -inner],
+      [c.x, c.sheerY, -edge],
+    ] as V3[];
+  });
+  skin(deckRows, deck);
+
+  // Transom: a fan around the stern outline, facing aft.
+  const transom: number[] = [];
+  const ring = [...right[0], ...left[0]];
+  const c: V3 = [-l / 2, (ring[0][1] + sections[0].sheerY) / 2, 0];
+  for (let i = 0; i < ring.length; i++) transom.push(...c, ...ring[i], ...ring[(i + 1) % ring.length]);
+
+  return { hull: geometry(hull), stripe: geometry(stripe), deck: geometry(deck), transom: geometry(transom), floorY, sections };
+}
+
+/** A round bar between two points (metres). */
+function Bar({ a, b, r, color, opacity }: { a: V3; b: V3; r: number; color: string; opacity: number }) {
+  const va = new THREE.Vector3(...a);
+  const vb = new THREE.Vector3(...b);
+  const dir = vb.clone().sub(va);
+  const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+  return (
+    <mesh position={va.add(vb).multiplyScalar(0.5)} quaternion={q} castShadow>
+      <cylinderGeometry args={[r, r, dir.length(), 14]} />
+      <Mat color={color} opacity={opacity} roughness={0.3} metalness={0.4} />
+    </mesh>
+  );
+}
+
+const ACCENT = '#c41e2c';
+const UPHOLSTERY = '#e4e6e8';
+const TRIM = '#1e2125';
+const DECK = '#5b6168';
+
+/**
+ * Fibreglass bowrider: deep V hull with hard chines and an accent stripe, a cockpit recessed to the floor height the
+ * palette places gear on, seats, a windscreen and a wakeboard tower. The hull colour is the item's.
+ */
 function BoatHull({ size, color, opacity, outline, userData, events }: Omit<ShapeProps, 'shape'> & { events: Record<string, unknown> }) {
   const l = size.l / 1000;
   const w = size.w / 1000;
   const h = size.h / 1000;
-  const geo = useMemo(() => {
-    const floorH = h * BOAT_FLOOR;
-    const outer = new THREE.Shape();
-    drawHull(outer, l, w);
-    const base = standUp(new THREE.ExtrudeGeometry(outer, { depth: floorH, bevelEnabled: false, curveSegments: 16 }));
-    // Narrow the bottom towards a keel.
-    const pos = base.attributes.position as THREE.BufferAttribute;
-    for (let i = 0; i < pos.count; i++) {
-      const t = pos.getY(i) / floorH;
-      pos.setZ(i, pos.getZ(i) * (0.3 + 0.7 * t));
-    }
-    base.computeVertexNormals();
-    base.translate(0, -h / 2, 0);
+  const geo = useMemo(() => hullGeometry(l, w, h), [l, w, h]);
+  useEffect(() => () => [geo.hull, geo.stripe, geo.deck, geo.transom].forEach((g) => g.dispose()), [geo]);
 
-    const t = Math.min(0.05, w * 0.03);
-    const ring = new THREE.Shape();
-    drawHull(ring, l, w);
-    const hole = new THREE.Path();
-    drawHull(hole, l - 2.6 * t, w - 2 * t);
-    ring.holes = [hole];
-    const sides = standUp(new THREE.ExtrudeGeometry(ring, { depth: h - floorH, bevelEnabled: false, curveSegments: 16 }));
-    sides.translate(0, -h / 2 + floorH, 0);
-    const rail = standUp(new THREE.ExtrudeGeometry(ring, { depth: 0.035, bevelEnabled: false, curveSegments: 16 }));
-    rail.translate(0, h / 2 - 0.02, 0);
-    return { base, sides, rail, floorY: -h / 2 + floorH };
-  }, [l, w, h]);
-  useEffect(() => () => [geo.base, geo.sides, geo.rail].forEach((g) => g.dispose()), [geo]);
-  const consoleH = Math.min(0.75, h * 0.8);
+  const at = (s: number) => hullSection(s, l, w, h);
+  const x = (s: number) => -l / 2 + s * l;
+  const inner = (s: number) => 0.98 * at(s).halfBeam - Math.min(0.17, 0.3 * 0.98 * at(s).halfBeam);
+  const f = geo.floorY;
+  const seatH = Math.min(0.42, (at(0.3).sheerY - f) * 0.85);
+  const seat = (s0: number, s1: number, z0: number, z1: number, key: string) => (
+    <group key={key}>
+      <mesh position={[(x(s0) + x(s1)) / 2, f + seatH * 0.4, (z0 + z1) / 2]} castShadow>
+        <boxGeometry args={[x(s1) - x(s0), seatH * 0.8, Math.abs(z1 - z0)]} />
+        <Mat color={ACCENT} opacity={opacity} roughness={0.7} />
+      </mesh>
+      <mesh position={[(x(s0) + x(s1)) / 2, f + seatH * 0.9, (z0 + z1) / 2]} castShadow>
+        <boxGeometry args={[x(s1) - x(s0) - 0.02, seatH * 0.2, Math.abs(z1 - z0) - 0.02]} />
+        <Mat color={UPHOLSTERY} opacity={opacity} roughness={0.8} />
+      </mesh>
+    </group>
+  );
+  const side = 0.38;
+  const towerS = 0.42;
+  const towerTop = at(towerS).sheerY + Math.min(1.05, 1.2 * h);
+  const legZ = inner(towerS) + 0.05;
+  const screenS = 0.66;
+  const screenZ = inner(screenS);
+  const screenH = Math.min(0.38, 0.45 * h);
+
   return (
     <group {...events}>
-      <mesh geometry={geo.base} castShadow receiveShadow userData={userData}>
-        <Mat color={color} opacity={opacity} roughness={0.35} metalness={0.3} />
-        {outline && <Edges color={outline} threshold={30} />}
+      <mesh geometry={geo.hull} castShadow receiveShadow userData={userData}>
+        <Mat color={color} opacity={opacity} roughness={0.5} metalness={0.05} />
+        {outline && <Edges color={outline} threshold={25} />}
       </mesh>
-      <mesh geometry={geo.sides} castShadow userData={userData}>
-        <Mat color={color} opacity={opacity} roughness={0.35} metalness={0.3} />
+      <mesh geometry={geo.stripe} userData={userData}>
+        <Mat color={ACCENT} opacity={opacity} roughness={0.3} metalness={0.3} />
       </mesh>
-      <mesh geometry={geo.rail}>
-        <Mat color="#2b2f35" opacity={opacity} />
+      <mesh geometry={geo.transom} castShadow userData={userData}>
+        <Mat color={color} opacity={opacity} roughness={0.5} metalness={0.05} />
       </mesh>
-      <mesh position={[-l * 0.02, geo.floorY + consoleH / 2, 0]} castShadow userData={userData}>
-        <boxGeometry args={[0.55, consoleH, 0.5]} />
-        <Mat color="#3a4048" opacity={opacity} />
+      <mesh geometry={geo.deck} castShadow receiveShadow userData={userData}>
+        <Mat color={DECK} opacity={opacity} roughness={0.8} />
       </mesh>
+
+      {/* Stern bench, side seats, the helm and passenger consoles, and bow seats. */}
+      {seat(COCKPIT[0] + 0.01, 0.19, -inner(0.19), inner(0.19), 'stern')}
+      {[-1, 1].map((sgn) => seat(0.19, 0.44, sgn * (inner(0.3) - side), sgn * inner(0.3), `side${sgn}`))}
+      {[-1, 1].map((sgn) => (
+        <mesh key={`console${sgn}`} position={[(x(0.58) + x(0.65)) / 2, f + 0.27, sgn * (screenZ - 0.3)]} castShadow>
+          <boxGeometry args={[x(0.65) - x(0.58), 0.54, 0.46]} />
+          <Mat color={TRIM} opacity={opacity} />
+        </mesh>
+      ))}
+      {[-1, 1].map((sgn) => seat(0.7, COCKPIT[1] - 0.01, sgn * Math.max(0.15, inner(0.8) - 0.4), sgn * inner(0.8), `bow${sgn}`))}
+
+      {/* Wrap-around windscreen with a walk-through in the middle. */}
+      {[-1, 1].map((sgn) => (
+        <mesh key={`screen${sgn}`} position={[x(screenS), at(screenS).sheerY + screenH / 2 - 0.02, sgn * (screenZ + 0.25) / 2]} rotation={[sgn * 0.08, 0, 0.45]}>
+          <boxGeometry args={[0.03, screenH, screenZ - 0.25]} />
+          <meshStandardMaterial color="#14181c" roughness={0.1} metalness={0.3} transparent opacity={0.88 * opacity} depthWrite={false} />
+        </mesh>
+      ))}
+
+      {/* Wakeboard tower: legs on the gunwales, a crossbar with speakers, braces forward. */}
+      {[-1, 1].map((sgn) => (
+        <group key={`tower${sgn}`}>
+          <Bar a={[x(towerS), at(towerS).sheerY, sgn * legZ]} b={[x(towerS) + 0.3, towerTop, sgn * (legZ - 0.12)]} r={0.035} color={ACCENT} opacity={opacity} />
+          <Bar a={[x(towerS + 0.16), at(towerS + 0.16).sheerY, sgn * (inner(towerS + 0.16) + 0.04)]} b={[x(towerS) + 0.3, towerTop, sgn * (legZ - 0.12)]} r={0.03} color={ACCENT} opacity={opacity} />
+          <mesh position={[x(towerS) + 0.3, towerTop - 0.12, sgn * (legZ - 0.35)]} rotation={[0, 0, Math.PI / 2]} castShadow>
+            <cylinderGeometry args={[0.09, 0.09, 0.22, 18]} />
+            <Mat color={TRIM} opacity={opacity} roughness={0.4} />
+          </mesh>
+        </group>
+      ))}
+      <Bar a={[x(towerS) + 0.3, towerTop, -(legZ - 0.12)]} b={[x(towerS) + 0.3, towerTop, legZ - 0.12]} r={0.04} color={ACCENT} opacity={opacity} />
     </group>
   );
 }
